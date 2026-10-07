@@ -21,21 +21,37 @@ CFLAGS     = -Os -Wall -Wextra -Werror -mmcu=$(MCU) \
 # -------------------------------------- Files -------------------------------------- #
 
 SRCS       = main
+BUILD_DIR  = build
+
+BIN        = $(BUILD_DIR)/$(SRCS).bin
+HEX        = $(BUILD_DIR)/$(SRCS).hex
 
 # -------------------------------------- Rules -------------------------------------- #
 
-all : hex flash
+all : flash
 
-hex : $(SRCS).c
-	$(CC) $(CFLAGS) -o $(SRCS).bin $(SRCS).c
-	$(OBJ_CPY) -O ihex $(SRCS).bin $(SRCS).hex 
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+hex : $(SRCS).c | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) -o $(BIN) $(SRCS).c
+	@$(OBJ_CPY) -O ihex $(BIN) $(HEX)
+
 flash : hex
 	$(AVR_DUDE) -p $(MCU) -c $(BOARD) -P $(PORT) \
-		-b $(BAUD_RATE) -U flash:w:$(SRCS).hex:i
+		-b $(BAUD_RATE) -U flash:w:$(HEX):i
+	@printf "🩷\033[35m All Good \033[0m🩷\n"
 
 clean:
-	rm -rf *.bin *.hex
+	@rm -rf $(BUILD_DIR)
+	@printf "\033[32m.Bin & .Hex cleaned\033[0m\n"
 fclean: clean
+	@printf "\033[95mFull clean\033[0m\n"
+
 re: fclean all
 
-.PHONY: all clean fclean flash hex re
+# ----------- Extra -------------- #
+cputil: hex
+	avr-objdump -d -S $(BIN) | less
+
+.PHONY: all clean fclean flash hex re cputil

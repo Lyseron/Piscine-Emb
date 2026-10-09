@@ -2,7 +2,8 @@
 
 MCU        = atmega328p
 BOARD      = arduino
-PORT	   = /dev/ttyUSB0
+PORT_LINUX	   = /dev/ttyUSB0
+PORT_MAC   = /dev/cu.usbserial-120
 
 CPU_SPEED  = 16000000UL
 BAUD_RATE  = 115200
@@ -17,6 +18,16 @@ OBJ_CPY    = avr-objcopy
 CC         = avr-gcc
 CFLAGS     = -Os -Wall -Wextra -Werror -mmcu=$(MCU) \
 	-DF_CPU=$(CPU_SPEED) -DUART_BAUDRATE=$(BAUD_RATE)
+
+
+# -------------------------------------- OS ----------------------------------------- #
+
+UNAME_S    := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	PORT = $(PORT_MAC)
+else ifeq ($(UNAME_S),Linux)
+	PORT = $(PORT_LINUX)
+endif
 
 # -------------------------------------- Files -------------------------------------- #
 
@@ -56,5 +67,10 @@ cputil: hex
 	avr-objdump -d -S $(BIN) | less
 uart :
 	screen $(PORT) $(BAUD_RATE)
+# screen -ls -> to check the sessions screen
+# screen -r NB -> get the NB session -> to get the session back
+# kill NB -> to close the session
+# to close proprely a session -> Ctrl + a -> k -> y
+
 
 .PHONY: all clean fclean flash hex re cputil

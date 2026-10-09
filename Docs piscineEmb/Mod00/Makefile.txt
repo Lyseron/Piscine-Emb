@@ -1,0 +1,126 @@
+# This Makefile builds main.c for an ATmega328P and uploads it to the board.
+# Recipe lines must begin with a TAB, not spaces.
+
+CC         = avr-gcc
+# avr-gcc -> GCC compiler driver for AVR microcontrollers.
+# GCC -> GNU Compiler Collection, a set of tools that translates source code.
+# AVR -> the microcontroller architecture used by the ATmega328P.
+# Compiler -> tool that translates C code into instructions for the target chip.
+# Here avr-gcc also runs the assembler and linker to build the final program.
+
+MCU        = atmega328p
+# MCU -> Microcontroller Unit: a chip with a CPU, memory and peripherals.
+# -mmcu=atmega328p -> selects the target chip for compilation and linking.
+# It also allows avr/io.h to select the correct register definitions.
+
+CPU_SPEED  = 16000000UL
+# CPU frequency -> number of processor clock cycles per second, in hertz (Hz).
+# 16000000 Hz = 16 MHz = 16 million clock cycles per second.
+# UL -> marks the C constant as an unsigned long integer.
+# -DF_CPU -> defines F_CPU for the C preprocessor, here as 16000000UL.
+# util/delay.h uses F_CPU to calculate delays such as _delay_ms(50).
+# This definition describes the clock frequency; it does not change the clock.
+
+AVR_DUDE   = avrdude
+# avrdude -> tool used to program and read the memories of AVR microcontrollers.
+# Here it uploads the compiled program into the microcontroller's flash memory.
+# Flash memory -> non-volatile memory that keeps the program without power.
+
+BOARD      = arduino
+# arduino -> AVRDUDE programmer selection used for the Arduino serial bootloader.
+# This variable selects the programming method, not the microcontroller model.
+# Protocol -> agreed rules used by two devices to exchange information.
+# Bootloader -> a small program already on the chip that can receive and install
+# a new application through a communication interface, here a serial connection.
+
+OBJ_CPY    = avr-objcopy
+# avr-objcopy -> tool used to copy or convert compiled files between formats.
+# Here it converts the ELF program named main.bin into an Intel HEX file.
+# ELF -> Executable and Linkable Format: a structured compiled-program format.
+# The .bin filename is kept from your original Makefile; the content is ELF.
+
+BAUD_RATE  = 115200
+# Baud rate -> number of transmitted symbols per second.
+# For this serial link, one symbol carries one bit, so this is 115200 bits/s.
+# Framing uses some of those bits, so this is not 115200 data bytes per second.
+# This is the upload speed; it must match the board's bootloader configuration.
+
+PORT       = /dev/ttyUSB0
+# Port -> operating-system device path for the board's serial connection.
+# /dev/ttyUSB0 is a Linux example, not the physical USB socket's name.
+# On macOS, use the board's actual /dev/cu.usbmodem... or /dev/cu.usbserial... path.
+# You can override it without editing this file: make flash PORT=/dev/cu.<name>
+
+CFLAGS     = -Os -Wall -Wextra -Werror -mmcu=$(MCU) -DF_CPU=$(CPU_SPEED) -DUART_BAUDRATE=$(BAUD_RATE)
+# CFLAGS -> options passed to the compiler driver.
+# -Os -> optimizes the generated program to reduce its size.
+# -Wall -> enables a broad set of warnings, but not every possible warning.
+# -Wextra -> enables additional warnings not included in -Wall.
+# -Werror -> treats enabled warnings as errors, so they stop a successful build.
+# -mmcu=$(MCU) -> selects the chip stored in the MCU variable.
+# -DNAME=value -> defines a preprocessor macro before processing the C source.
+# -DF_CPU=$(CPU_SPEED) -> tells the delay code the processor clock frequency.
+# -DUART_BAUDRATE=$(BAUD_RATE) -> defines a custom macro named UART_BAUDRATE.
+# UART -> a hardware peripheral used for asynchronous serial communication.
+# This macro only affects C code that uses it; it does not configure UART registers.
+# $(NAME) -> inserts the value of a Makefile variable named NAME.
+
+SRCS       = main
+# SRCS -> here it stores one filename stem, without the extension.
+# main becomes main.c, main.bin and main.hex in the rules below.
+# This Makefile currently builds one C source file: main.c.
+
+RM         = rm -rf
+# rm -> removes files; -r -> also allows recursive directory removal.
+# -f -> does not ask for confirmation and ignores missing files.
+# The clean rule below passes generated .bin and .hex files to this command.
+
+all: hex flash
+# all -> default target: runs hex, then uploads the program with flash.
+# flash also depends on hex, so conversion finishes before upload starts.
+# Target -> file or action requested from make.
+# Prerequisite -> file or target that must be ready before the target is built.
+# make hex builds the program without trying to upload it.
+
+hex: $(SRCS).c
+	$(CC) $(CFLAGS) -o $(SRCS).bin $<
+	$(OBJ_CPY) -O ihex $(SRCS).bin $(SRCS).hex
+# hex -> compiles main.c into main.bin, then generates main.hex from main.bin.
+# avr-gcc compiles and links the source into an ELF program named main.bin.
+# The assignment requires this filename, not a raw binary format.
+# -o -> selects the compiler's output filename, with a lowercase letter o.
+# $< -> the first prerequisite, here main.c.
+# -s is NOT used here; it would remove symbol information during linking.
+# Symbol -> a name associated with a function or variable in compiled code.
+# -O -> selects the output file format, with a capital letter O.
+# ihex -> Intel HEX: text records containing data, addresses and checksums.
+# Checksum -> a calculated value used to detect errors in a record's contents.
+# $@ would be hex in this rule, so the output filenames are written explicitly.
+
+flash: hex
+	$(AVR_DUDE) -p $(MCU) -c $(BOARD) -P $(PORT) -b $(BAUD_RATE) -U flash:w:$(SRCS).hex:i
+# flash -> waits for hex to finish, then uploads main.hex to flash memory.
+# -p -> selects the AVR microcontroller model, here atmega328p.
+# -c -> selects the programmer/communication method, here arduino.
+# -P -> selects the serial device path, with a capital letter P.
+# -b -> selects the serial communication baud rate, here 115200.
+# -U -> requests a memory operation: memory:operation:filename:format.
+# flash -> selects the program flash memory.
+# w -> write: copy the file's program data into the selected memory.
+# $(SRCS).hex -> input filename, here main.hex.
+# i -> tells AVRDUDE that the input file uses Intel HEX format.
+
+clean:
+	$(RM) $(SRCS).bin $(SRCS).hex
+# clean -> removes main.bin and main.hex, as requested by the assignment.
+
+fclean: clean
+# fclean -> runs clean; both have the same effect in this small project.
+
+re: fclean all
+# re -> cleans the generated files and builds/uploads again with ordinary make.
+# The two prerequisites are not an ordering guarantee when using parallel make.
+
+.PHONY: all hex flash clean fclean re
+# .PHONY -> marks these names as actions, not files that can be up to date.
+# Their recipes run when requested even if a file with the same name exists.

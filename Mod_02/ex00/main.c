@@ -17,7 +17,7 @@ void uart_tx(char c);
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
 // Ex00: Send the char 'Z' form the chip to the computer
-	// Configuration: 11520 baud, 8N1
+	// Configuration: 115200 baud, 8N1
 int main(void)
 {
 	uart_init();

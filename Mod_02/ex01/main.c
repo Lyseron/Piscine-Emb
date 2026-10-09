@@ -20,7 +20,7 @@ void uart_printstr(const char *str);
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
 // Ex01: Send the str "Hello World" form the chip to the computer every 2s
-	// Configuration: 11520 baud, 8N1
+	// Configuration: 115200 baud, 8N1
 int main(void)
 {
 // init the UART
@@ -157,21 +157,16 @@ UCSR0C -> UART Control and Status Register C (Configurate the format of data)
 			-> Transmit and receives data without a shared clock signal
 		// here Asynchronous USART Mode page 161 datasheet
 
-	- Bits UCSZ01(2), UCSZ00(1) -> Char size
-		- Define the number of data bits in each UART frame
-		- WOrk with UCSZ02 in UCSR0B
+	- Bits UCSZ01(2), UCSZ00(1) -> Define the number of data bits in each UART frame
+		- WOrk with bit UCSZ02 in register UCSR0B
 		- For 8 bit data -> UCSZ02 = 0, UCSZ01 = 1, UCSZ00 = 1
 		- 8 bit data being 1 char
 
 	- Bits UPM01(5), UPM00(4) -> Parity Mode
-		-> Optional bit used for simple transmittion error detection
-		-> 00 -> No parity
-			-> disable parity
+		-> Optional bit used for simple transmition error detection -> 00 -> No parity -> disable parity
 
 	- Bit USBS0(3) -> Stop Bit Select
-		-> Stop bit -> Marks the end of a UART frame
-		-> UsBs0 = 0 -> One stop bit
-		For 8N1 -> 0
+		-> Stop bit -> Marks the end of a UART frame -> UsBs0 = 0 -> One stop bit
 
 UDR0 -> USART 1/0 Data Register
 	- Register used to send or received UART data
@@ -189,11 +184,6 @@ UDR0 -> USART 1/0 Data Register
 
 - Formula to calculate UBRR0 -> F_CPU / (16 * UART_BAUDRATE) - 1
 -> Formula to calculate the actual baud rate -> F_CPU / (16 * (UBRR0 + 1))
-
-	- Normal asynchronous mode (U2X00 = 0)
-		UBRR0 = 16 000 000 / (16 * 115200) -1 = 7.68
-			-> UBRR0 takes only integer so 7.68 = 8
-		Actual Baud rate = 16 000 000 / (16 * (8 + 1)) = 111111 baud
 
 	- Asynchronous double speed mode (U2X0 = 1) -> le 16 devient 8
 		UBRR0 = 16 000 000 / (8 * 115200) -1 = 16.38

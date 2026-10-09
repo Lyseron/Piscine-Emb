@@ -26,7 +26,7 @@ void init_timer1()
 	-> In CTC mode, it count until OCR1A is reached then starts gaain from 0
 - TCCR1B -> register used to configure another part of Timer1
 		- Bit WGM12 = 1 ->  activate mode CTC (Clear Timer on Compare Match)
-		- Bit CS12 = 1, CS11 = 0, CS10 = 0 -> select a prescaler of 1054
+		- Bit CS12 = 1, CS11 = 0, CS10 = 0 -> select a prescaler of 1024
 			- prescaler -> devide the microcontroller clock to slow down the clock seen by Timer1 
 			- (because 16 000 000UL is too big to fit in TCNT1 that can count max til 65535)
 				-> CPU clock = 16MHz
@@ -49,7 +49,7 @@ sei() -> function that to autorise the global interuption
 
 // To calculate the stopping time 1Hertz/(0.5)s
 	// 16 000 000(CPU frequency) / 1024(prescaler) = 15625 par second
-	// 15625 * 2(for 2 second ou 2hertz) = 31250
+	// 15625 * 2(for 2 second) = 31250
 	// 31250 - 1(for the 0) = 31249
 
 */

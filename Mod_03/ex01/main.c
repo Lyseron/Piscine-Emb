@@ -5,33 +5,49 @@
 // for sei() and ISR
 #include <avr/interrupt.h>
 
-// ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
+// ------------------------------------------- DEFINE --------------------------------------------------------- //
 
-void init(void);
+#define RED PD5
+#define GREEN PD6
+#define BLUE PD3
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
 int main(void)
 {
-	init();
+	// Configurate the LED RGB D in output
+	DDRD |= (1 << DDD3) | (1 << DDD5) | (1 << DDD6);
 
 	while (1)
 	{
-		PORTD = (1 << PD5);
+		// Turn on Red Led then wait a second
+		PORTD = (1 << RED);
 		_delay_ms(1000);
-		PORTD = (1 << PD6);
+
+		// Turn on Green Led then wait a second
+		PORTD = (1 << GREEN);
 		_delay_ms(1000);
-		PORTD = (1 << PD3);
+
+		// Turn on Blue Led then wait a second
+		PORTD = (1 << BLUE);
+		_delay_ms(1000);
+
+		// Turn on yellow (Red + Green)
+		PORTD = (1 << RED) | (1 << GREEN);
+		_delay_ms(1000);
+
+		// Turn on cyan (Green + Blue)
+		PORTD = (1 << GREEN) | (1 << BLUE);
+		_delay_ms(1000);
+
+		// Turn on magenta (Red and Blue)
+		PORTD = (1 << RED) | (1 << BLUE);
+		_delay_ms(1000);
+
+		// Turn on white (Red + Green + Blue)
+		PORTD = (1 << RED) | (1 << GREEN) | (1 << BLUE);
 		_delay_ms(1000);
 	}
-}
-
-// ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
-
-void init(void)
-{
-	// configurate the LED RGB D in output
-	DDRD |= (1 << DDD3) | (1 << DDD5) | (1 << DDD6);
 }
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //

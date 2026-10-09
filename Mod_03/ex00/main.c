@@ -2,12 +2,12 @@
 #include <avr/io.h>
 // for the _delay_ms
 #include <util/delay.h>
-// for sei() and ISR
-#include <avr/interrupt.h>
 
-// ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
+// ------------------------------------------- DEFINE --------------------------------------------------------- //
 
-void init(void);
+#define RED PD5
+#define GREEN PD6
+#define BLUE PD3
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -19,25 +19,27 @@ int main(void)
 	while (1)
 	{
 		// turn on Red Led then wait a second
-		PORTD = (1 << PD5);
+		PORTD = (1 << RED);
 		_delay_ms(1000);
 
 		// turn on Green Led then wait a second
-		PORTD = (1 << PD6);
+		PORTD = (1 << GREEN);
 		_delay_ms(1000);
 
 		// turn on Blue Led then wait a second
-		PORTD = (1 << PD3);
+		PORTD = (1 << BLUE);
 		_delay_ms(1000);
 	}
 }
 
-// ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
-
-void init(void)
-{
-	
-}
-
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
+/*
 
+DDRD -> 
+
+PORTD ->
+	- Bit PD3(3) ->
+	- Bit PD5(5) ->
+	- Bit PD6(6) ->
+
+*/

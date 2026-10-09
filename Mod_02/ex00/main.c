@@ -152,7 +152,6 @@ UDR0 -> USART 1/0 Data Register
 	- Reception -> Read a received char from UDR0
 	Like a buffer kinda
 
-// ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
 
 // Calculate the UART baud rate (speed of transmission) page 146 datasheet
 	- Atmega328P runs at 16Mz, but UART needs to trasnmit at 115200 baud

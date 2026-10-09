@@ -19,7 +19,7 @@ char changes_maj_min(char c);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00: Received a char form the PC and send it back to the PC
+// Ex03: Received a char form the PC and send it back to the PC but with the maj <-> min change
 	// Configuration: 11520 baud, 8N1
 int main(void)
 {

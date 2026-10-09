@@ -19,7 +19,7 @@ void uart_printstr(const char *str);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00: Send the str "Hello World" form the chip to the computer every 2s
+// Ex01: Send the str "Hello World" form the chip to the computer every 2s
 	// Configuration: 11520 baud, 8N1
 int main(void)
 {
@@ -27,16 +27,16 @@ int main(void)
 	uart_init();
 
 // init TIMER 1 for 2s && activate interupt canal A
-	// init_timer1();
+	init_timer1();
 
 // activate the possibility to uses unteruptions (global interuption)
-	// sei();
+	sei();
 
 // useless infinite loop
 	while (1)
 	{
-		uart_printstr("Hello World!\r\n");
-		_delay_ms(1000);
+		// uart_printstr("Hello World!\r\n");
+		// _delay_ms(1000);
 	}
 }
 
@@ -48,20 +48,6 @@ ISR(TIMER1_COMPA_vect)
 	uart_printstr("Hello World!\r\n");
 }
 
-void init_timer1()
-{
-// Value Timer1 needs to reach before starting again from 0 (2s)
-	OCR1A = 31249;
-
-// Activate the CTC mode -> Timer1 goes back to 0 when OCR1A is reached
-	TCCR1B = (1 << WGM12);
-
-// Set the prescaler to 1024 -> to slow down the Timer1 clock
-	TCCR1B |= (1 << CS12) | (1 << CS10);
-
-// Activate the interuption on timer1
-	TIMSK1 |= (1 << OCIE1A);
-}
 
 // configurate UART (transmission speed, nb of bit, parity, stopping bit, emmetor activation)
 void uart_init(void)
@@ -110,7 +96,7 @@ UART_BAUDRATE -> Desired UART transmission speed
 	- 11500 -> Desired transmission speed in bauds
 	- Baud rate -> Number of symbols(1 symbols = 1bit) transmitted per second
 	- At 115200 baud -> ~115200 bits per second
-	Datasheet _. page 145-146
+	Datasheet -> page 145-146
 
 UART -> Universal Asynchronous Receiver/Transmitter (communication between the microcontroller and the pc)
 	- Asynchronous -> The UART and PC do not share a clock signal, but both devices must uses aproximativly the same baud rate and data format
@@ -141,7 +127,7 @@ UBRR0 -> USART Baud Rate Register 0
 	- new formula -> baud = F_CPU / (8 x (UBRR0 + 1))
 	Datasheet -> page 145-146 et UBRRnL & H -> page 162
 
-- UCSR0A -> UART Control and Status Register A (state/ flags)
+UCSR0A -> UART Control and Status Register A (state/ flags)
 	- Contains UART status flags ans the double speed mode configuration
 	Datasheet -> page 159-160
 	
@@ -158,7 +144,7 @@ UCSR0B -> UART Control and Status Register B (transmission , reception and inter
 		- TXEN0 = 0 -> Disable transmission
 		- TXEN0 = 1 -> Activate transmission
 
-// UCSR0C -> UART Control and Status Register C (Configurate the format of data)
+UCSR0C -> UART Control and Status Register C (Configurate the format of data)
 	- Used to configurate the UART data format (8N1)
 		- 8 -> 8 bit for each data
 		- N -> No parity
@@ -194,29 +180,6 @@ UDR0 -> USART 1/0 Data Register
 	Like a buffer kinda
 	Datasheet -> page 159
 
-- Timer1 -> Automatic counter 0,1,2,3 ect til the overload 65535 then back to 0 (16 bit)
-	-> In CTC mode, it count until OCR1A is reached then starts gaain from 0
-- TCCR1B -> register used to configure another part of Timer1
-		- Bit WGM12 = 1 ->  activate mode CTC (Clear Timer on Compare Match)
-		- Bit CS12 = 1, CS11 = 0, CS10 = 0 -> select a prescaler of 1054
-			- prescaler -> devide the microcontroller clock to slow down the clock seen by Timer1 
-			- (because 16 000 000UL is too big to fit in TCNT1 that can count max til 65535)
-				-> CPU clock = 16MHz
-				-> Timer1 clock = 16MHz / 1054(prescaler)
-
-TIMSK1 -> Register that enable interuption
-	-> Bit OCIE1A = 1-> activate the compare match canal A on timer1
-	-> Bit OCIE1A = 0 -> disable the compare match canal A on timer1
-	-> The interupt can execute when TCNT1 match OCR1A
-	-> Required global interupt to be activated (sei())
-	Datasheet -> page 112
-
-ISR(TIMER1_COMPA_vect) -> Interupt Service Routine
-	-> ISR=> automatic fonction executer when a interuption occurs
-	-> TIMER1_COMPA_vect -> identifie the interuption of canal A (OCR1A) of timer1
-	Datasheet -> page 49-50
-sei() -> to autorise the interuption
-
 // ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
 
 // Calculate the UART baud rate (speed of transmission) page 146 datasheet
@@ -236,10 +199,4 @@ sei() -> to autorise the interuption
 		UBRR0 = 16 000 000 / (8 * 115200) -1 = 16.38
 			-> UBRR0 takes only integer so 16.38 = 16
 		Actual Baud rate = 16 000 000 / (8 * (16 + 1)) = 117647 baud
-
-// To calculate the stopping time 1Hertz/(0.5)s
-	// 16 000 000(CPU frequency) / 1024(prescaler) = 15625 par second
-	// 15625 * 2(for 2 second ou 2hertz) = 31250
-	// 31250 - 1(for the 0) = 31249
-
 */

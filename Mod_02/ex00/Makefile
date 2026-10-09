@@ -31,11 +31,13 @@ endif
 
 # -------------------------------------- Files -------------------------------------- #
 
-SRCS       = main
+SRCS       = $(wildcard *.c)
+HEADERS    = $(wildcard *.h)
+
 BUILD_DIR  = build
 
-BIN        = $(BUILD_DIR)/$(SRCS).bin
-HEX        = $(BUILD_DIR)/$(SRCS).hex
+BIN        = $(BUILD_DIR)/main.bin
+HEX        = $(BUILD_DIR)/main.hex
 
 # -------------------------------------- Rules -------------------------------------- #
 
@@ -44,9 +46,13 @@ all : flash
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-hex : $(SRCS).c | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -o $(BIN) $(SRCS).c
-	@$(OBJ_CPY) -O ihex $(BIN) $(HEX)
+$(BIN) : $(SRCS) $(HEADERS) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRCS) -o $(BIN)
+
+$(HEX): $(BIN)
+	$(OBJ_CPY) -O ihex $(BIN) $(HEX)
+
+hex : $(HEX)
 
 flash : hex
 	$(AVR_DUDE) -p $(MCU) -c $(BOARD) -P $(PORT) \
@@ -63,7 +69,7 @@ re: fclean all
 
 # ----------- Extra -------------- #
 
-cputil: hex
+cputil: $(BIN)
 	avr-objdump -d -S $(BIN) | less
 uart :
 	screen $(PORT) $(BAUD_RATE)
@@ -73,4 +79,4 @@ uart :
 # to close proprely a session -> Ctrl + a -> k -> y
 
 
-.PHONY: all clean fclean flash hex re cputil
+.PHONY: all clean fclean flash hex re cputil uart

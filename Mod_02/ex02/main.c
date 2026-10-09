@@ -17,18 +17,21 @@ void uart_tx(char c);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00: Received a char form the PC and send it back to the PC
+// Ex02: Received a char form the PC and send it back to the PC
 	// Configuration: 11520 baud, 8N1
 int main(void)
 {
-	// init the UART
+	// Init the UART
 	uart_init();
 
-	// useless infinite loop
+	// Useless infinite loop
 	while (1)
 	{
-		char c = uart_rx(); // receive a char
-		uart_tx(c); // transmit a char
+		// Receive a char from the pc
+		char c = uart_rx();
+
+		// Transmit a char to the pc
+		uart_tx(c); 
 	}
 }
 

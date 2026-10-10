@@ -206,12 +206,12 @@ sei() -> to autorise the global interuption
 
 // ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
 
-// Calculate the UART baud rate (speed of transmission) page 146 datasheet
+Calculate the UART baud rate (speed of transmission) page 146 datasheet
 	- Atmega328P runs at 16Mz, but UART needs to trasnmit at 115200 baud
 	- The UART clock must be divided to get the desired transmission speed
 	- We compare the normal and double speed to find the smallest baud rate error
 
-- Formula to calculate UBRR0 -> F_CPU / (16 * UART_BAUDRATE) - 1
+-> Formula to calculate UBRR0 -> F_CPU / (16 * UART_BAUDRATE) - 1
 -> Formula to calculate the actual baud rate -> F_CPU / (16 * (UBRR0 + 1))
 
 	- Normal asynchronous mode (U2X00 = 0)

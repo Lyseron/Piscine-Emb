@@ -15,8 +15,8 @@
 
 int main(void)
 {
-	// Configurate the LED RGB D in output
-	DDRD |= (1 << DDD3) | (1 << DDD5) | (1 << DDD6);
+	// Configurate the LED RGB as output
+	DDRD |= (1 << PD3) | (1 << PD5) | (1 << PD6);
 
 	while (1)
 	{

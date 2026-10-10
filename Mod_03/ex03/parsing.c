@@ -5,6 +5,7 @@
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
+// Check if the char is between 0 and 9 or A and F
 bool is_good_value(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -15,6 +16,7 @@ bool is_good_value(char c)
 		return (false);
 }
 
+// Return the size of a string
 uint8_t size(const char *str)
 {
 	uint8_t i = 0;
@@ -23,6 +25,7 @@ uint8_t size(const char *str)
 	return (i);
 }
 
+// Return false if the string is not a valid input
 bool parse_input(const char *str)
 {
 	if (str[0] != '#')
@@ -35,7 +38,7 @@ bool parse_input(const char *str)
 	return (true);
 }
 
-// convert a char into a nb or if i'ts a letter formula to convert the ascii to decimal (base 10)
+// Convert a char into a nb or if i'ts a letter formula to convert the ascii to decimal (base 10)
 uint8_t hex_value(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -44,11 +47,13 @@ uint8_t hex_value(char c)
 		return (c - 'A' + 10);
 }
 
+// Convert an hex value to a decimal one
 uint8_t convert_hex_to_decimal(char first_nb, char second_nb)
 {
 	return (hex_value((first_nb)) * 16 + hex_value((second_nb)));
 }
 
+// Fill the decimal value of each color
 void get_rgb(uint8_t *r, uint8_t *g, uint8_t *b, const char *str)
 {
 	*r = convert_hex_to_decimal(str[1], str[2]);
@@ -58,6 +63,11 @@ void get_rgb(uint8_t *r, uint8_t *g, uint8_t *b, const char *str)
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
 /*
+A color is correct if it has this format -> #RRGGBB
+	To be valid the input must ->
+		- Start with a '#'
+		- Be 7 char long
+		- Be a nb between 0 and 9 or be a letter in cap between A and F
 
 // ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
 

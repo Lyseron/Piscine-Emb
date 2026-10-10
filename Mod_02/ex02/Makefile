@@ -71,4 +71,4 @@ uart :
 # kill NB -> to close the session
 # to close proprely a session -> Ctrl + a -> k -> y
 
-.PHONY: all clean fclean flash hex re cputil
+.PHONY: all clean fclean flash hex re cputil uart

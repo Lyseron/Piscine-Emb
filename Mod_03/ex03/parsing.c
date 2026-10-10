@@ -35,6 +35,7 @@ bool parse_input(const char *str)
 	return (true);
 }
 
+// convert a char into a nb or if i'ts a letter formula to convert the ascii to decimal (base 10)
 uint8_t hex_value(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -56,5 +57,13 @@ void get_rgb(uint8_t *r, uint8_t *g, uint8_t *b, const char *str)
 }
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
+/*
 
 // ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
+
+Formula to a hex value to decimal -> firstNb * 16 + secondNb
+	Exemple : #FF6672
+		FF -> RED -> F = 15, F = 15 (15 * 16 + 15) -> RED = 255
+		66 -> GREEN -> (6 * 16 + 6) -> GREEN = 102
+		72 -> BLUE -> (7 * 16 + 2) -> BLUE = 114
+*/

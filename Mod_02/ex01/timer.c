@@ -16,7 +16,7 @@ void init_timer1()
 // Set the prescaler to 1024 -> to slow down the Timer1 clock
 	TCCR1B |= (1 << CS12) | (1 << CS10);
 
-// Activate the interuption on timer1
+// Activate the interuption on timer1 when OCR1A is reached
 	TIMSK1 |= (1 << OCIE1A);
 }
 

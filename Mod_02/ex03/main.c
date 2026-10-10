@@ -9,7 +9,7 @@
 
 #define F_CPU 16000000UL
 #define UART_BAUDRATE 115200
-#define REGISTER_FOR_TRANSMISSION_SPEED (F_CPU / (8 * UART_BAUDRATE) - 1)
+#define UART_BAUD_DIVIDER (F_CPU / (8 * UART_BAUDRATE) - 1)
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
@@ -49,11 +49,11 @@ ISR(USART_RX_vect)
 	uart_tx(convert_c); 
 }
 
-// configurate UART (transmission speed, nb of bit, parity, stopping bit, emmetor activation)
+// configurate UART (transmission speed, nb of bit, parity, stopping bit, double speed mode)
 void uart_init(void)
 {
 	// Configure the baud rate register
-	UBRR0L = REGISTER_FOR_TRANSMISSION_SPEED;
+	UBRR0L = UART_BAUD_DIVIDER;
 
 	// Activate the transmission & reception (TXEN0 = 1, RXEN0 = 1)
 	UCSR0B |= (1 << TXEN0) | (1 << RXEN0);

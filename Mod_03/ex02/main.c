@@ -103,15 +103,21 @@ void wheel(uint8_t pos)
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
 /*
-	Timer0 ->page 86 datasheet fast pwnm
-	timer2 ->page 129
 
-	// DDRX = Data Direction Register -> to defined the direction of a pin:
-	// DDRD = pins of PORT D
-		//	- Bitn = 1 -> OUTPUT -> the pin send a signal from the microcontroller chip to an outside component 
-			// Exemple: the chip send a signal to the led
-		//	- Bitn = 0 -> INPUT (DEFAULT VALUE) -> pin get a signal from an outside components to the microcontroller chip 
-			// Exemple: a button send an info to the chip
+DDRX -> Data Direction Register -> to defined the direction of a pin:
+	DDRD = pins of PORT D
+		- Bitn = 1 -> OUTPUT -> the pin send a signal from the microcontroller chip to an outside component 
+			-> Exemple: the chip send a signal to the led
+		- Bitn = 0 -> INPUT (DEFAULT VALUE) -> pin get a signal from an outside components to the microcontroller chip 
+			-> Exemple: a button send an info to the chip
+
+PORTX -> register to define the state of a pin (in output) : page 58 datasheet 
+	PORTD -> pins in output of PORT D
+		- Bitn = 1 -> HIGH -> the pin give a voltage (close to 5V or 3.3V)
+		- Bitn = 0 -> LOW (DEFAULT VALUE) -> the pin don't get voltage (GND/ 0V)
+	- Bit PD3(3) -> BLUE
+	- Bit PD3(5) -> RED
+	- Bit PD3(6) -> GREEN
 
 // TCNT1 -> register containing the current value of Timer1
 
@@ -123,14 +129,14 @@ void wheel(uint8_t pos)
 		// define the total duration of one PWM period
 	
 	// TCCR1A -> register used to configure a part of Timer1
-		// Bit WGM11 = 1 -> with WGM12 and WGM13 to select Fast PWM mode 14
+		// Bit WGM11 = 1 -> with WGM12 and WGM13 to select mode PWM
 		// Bit COM1A1/COM1A0 -> control what to do on the OC1A(PB1) pin
 		// Bit COM1A0(6) = 0
 		// Bit COM1A1(7) = 1
 			// Non inverted -> at first OC1A is HIGH then becomes LOW
 
 	// TCCR1B -> register used to configure another part of Timer1
-		// Bit WGM10 = 0, WGM11 = 1, WGM12 = 1, WGM12 = 1 -> activate the fast PWM mode
+		// Bit WGM10 = 0, WGM11 = 1, WGM12 = 1, WGM12 = 1 -> activate the PWM mode
 			// Fast PWM -> 
 		// Bit CS12 = 1, CS11 = 0, CS10 = 0 -> select a prescaler of 256
 			// prescaler -> devide the microcontroller clock to slow down the clock seen by Timer1 

@@ -7,7 +7,7 @@
 
 #define F_CPU 16000000UL
 #define UART_BAUDRATE 115200
-#define REGISTER_FOR_TRANSMISSION_SPEED (F_CPU / (8 * UART_BAUDRATE) - 1)
+#define UART_BAUD_DIVIDER (F_CPU / (8 * UART_BAUDRATE) - 1)
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
@@ -18,13 +18,13 @@ void uart_tx(char c);
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
 // Ex02: Received a char form the PC and send it back to the PC
-	// Configuration: 11520 baud, 8N1
+	// Configuration: 115200 baud, 8N1
 int main(void)
 {
 	// Init the UART
 	uart_init();
 
-	// Useless infinite loop
+	// Infinite loop
 	while (1)
 	{
 		// Receive a char from the pc
@@ -37,11 +37,11 @@ int main(void)
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
-// configurate UART (transmission speed, nb of bit, parity, stopping bit, emmetor activation)
+// Configurate UART (transmission speed, nb of bit, parity, stopping bit, double speed mode)
 void uart_init(void)
 {
 	// Configure the baud rate register
-	UBRR0L = REGISTER_FOR_TRANSMISSION_SPEED;
+	UBRR0L = UART_BAUD_DIVIDER;
 
 	// Activate the transmission & reception (TXEN0 = 1, RXEN0 = 1)
 	UCSR0B |= (1 << TXEN0) | (1 << RXEN0);

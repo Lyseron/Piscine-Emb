@@ -7,7 +7,7 @@
 
 #define F_CPU 16000000UL
 #define UART_BAUDRATE 115200
-#define REGISTER_FOR_TRANSMISSION_SPEED (F_CPU / (8 * UART_BAUDRATE) - 1)
+#define UART_BAUD_DIVIDER (F_CPU / (8 * UART_BAUDRATE) - 1)
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
@@ -30,13 +30,13 @@ int main(void)
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
-// configurate UART (transmission speed, nb of bit, parity, stopping bit, emmetor activation)
+// Configurate UART (transmission speed, nb of bit, parity, stopping bit, double speed mode)
 void uart_init(void)
 {
-// Configure the baud rate register
-	UBRR0L = REGISTER_FOR_TRANSMISSION_SPEED;
+// To know the divider in the intern formula for the baud rate
+	UBRR0L = UART_BAUD_DIVIDER;
 
-// Activate the transmission (TXEN0 = 1)
+// Activate the transmission (TXEN0 = 1) of the UART
 	UCSR0B |= (1 << TXEN0);
 
 // Select the asynchonous USART mode (UMSEL01 = 0, UMSEL00 = 0)
@@ -89,6 +89,7 @@ UART -> Universal Asynchronous Receiver/Transmitter (communication between the m
 		- Parity -> Optional error-detection bit (disable here)
 		- Stop bit -> Indicates the end of the data
 		- Total -> 10 bits transmitted for each char
+USART -> Add a synchronous mode for communication between component with a share clock
 
 UBRR0 -> USART Baud Rate Register 0
 	- Used to configure the UART transmission speed from the microcontroller clock
@@ -137,12 +138,12 @@ UCSR0B -> UART Control and Status Register B (transmission , reception and inter
 		- 8 bit data being 1 char
 
 	- Bits UPM01(5), UPM00(4) -> Parity Mode
-		-> Optional bit used for simple transmittion error detection
+		-> Optional bit used for simple transmition error detection
 		-> 00 -> No parity
 			-> disable parity
 
 	- Bit USBS0(3) -> Stop Bit Select
-		-> Stop bit -> Marks the end of a UART frame
+		-> Stop bit -> Marks the end of a UART frame (10bit by char)
 			-> USBS0 = 0 -> One stop bit
 		For 8N1 -> 0
 
@@ -159,7 +160,7 @@ UDR0 -> USART 1/0 Data Register
 	- We compare the normal and double speed to find the smallest baud rate error
 
 - Formula to calculate UBRR0 -> F_CPU / (16 * UART_BAUDRATE) - 1
--> Formula to calculate the actual baud rate -> F_CPU / (16 * (UBRR0 + 1))
+- Formula to calculate the actual baud rate -> F_CPU / ((8(double speed) or 16(normal)) * (UBRR0 + 1))
 
 	- Normal asynchronous mode (U2X00 = 0)
 		UBRR0 = 16 000 000 / (16 * 115200) -1 = 7.68

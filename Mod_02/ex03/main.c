@@ -46,7 +46,7 @@ ISR(USART_RX_vect)
 	char convert_c = changes_maj_min(c);
 
 	// transmit a char from to chip to the pc
-	uart_tx(convert_c); 
+	uart_tx(convert_c);
 }
 
 // configurate UART (transmission speed, nb of bit, parity, stopping bit, double speed mode)

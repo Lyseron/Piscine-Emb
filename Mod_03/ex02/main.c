@@ -128,7 +128,7 @@ Timer0 -> Automatic counter 0,1,2,3 ect til the overload 6 then back to 0 (16 bi
 	- TCCR0A -> register used to configure a part of Timer1
 		- Bit WGM01 = 1, WGM00 = 1 -> select mode PWM
 		- Bit COM0A1 = 1, COM0B1 = 1 -> Non inverted mode HIGH TO LOW on compare match : 0CR0A / OCR0B
-			->Non inverted -> at first OC0A or 0C0B is HIGH then becomes LOW
+			-> Non inverted -> at first OC0A or 0C0B is HIGH then becomes LOW
 
 	- TCCR0B -> register used to configure another part of Timer1
 		// Bit CS01 = 1, CS00 = 1-> select a prescaler of 64
@@ -146,7 +146,7 @@ Timer2 -> Automatic counter 0,1,2,3 ect til the overload 6 then back to 0 (16 bi
 			(because 16 000 000UL is too big to fit in TCNT1 that can count max til 65535)
 			-> CPU clock = 16MHz -> Timer2 clock = 16MHz / 64(prescaler)
 		- Bit COM2B1 = 1 -> Non inverted mode HIGH TO LOW on compare match : 0CR0A / OCR0B
-			->Non inverted -> at first OC1A is HIGH then becomes LOW
+			-> Non inverted -> at first OC1A is HIGH then becomes LOW
 
 // OCR0A, OCR0B, OCR2B -> Out Compare Register 0 or 2, canal A or B -> Define when OC0A, OC0B or OC2B changes from HIGH to LOW
 	// Timer0 or Timer2 compares TCNT1 with OCR0A, OCR0B or OCR2B

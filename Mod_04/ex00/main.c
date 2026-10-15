@@ -17,6 +17,8 @@ volatile uint8_t interupt_counter = 0;
 void init(void);
 void start_timer(void);
 void INT0_vect(void) __attribute__((signal));
+void TIMER0_COMPA_vect(void) __attribute__((signal));
+
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -46,6 +48,8 @@ void TIMER0_COMPA_vect(void)
 	{
 		// Clear waiting interuption
 		EIFR = (1 << INTF0);
+  // Stop timer0
+  TCCR0A = 0;
 
 		// Enable interupt
 		EIMSK |= (1 << INT0);

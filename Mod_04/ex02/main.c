@@ -41,8 +41,8 @@ int main(void)
 {
 	// Configurate Led, button and interuption
 	init();
-	// Activate global interupts
-	sei();
+	// Enable global interupt (sei())
+	__asm__ __volatile__ ("sei" ::: "memory");
 	// Useless loop
 	while (1)
 	{}
@@ -132,30 +132,30 @@ void TIMER1_COMPA_vect(void)
 
 void init(void)
 {
-	// Put the LED is OUTPUT
+	// Put the LED as OUTPUT
 	DDRB |= (1 << LED_D1) | (1 << LED_D2) | (1 << LED_D3) | (1 << LED_D4);
 
-	// Put the SW1(PD2) and SW2(PD4) button to INPUT
+	// Put the SW1(PD2) and SW2(PD4) button as INPUT
 	DDRD &= ~(1 << BUTTON_ADD);
 	DDRD &= ~(1 << BUTTON_REMOVE);
 
-	// ACtivate internal pull_up page 58 - 73
+	// Activate internal pull_up page 58 - 73
 	PORTD |= (1 << BUTTON_ADD) | (1 << BUTTON_REMOVE);
 
-	// Interuption on descending front (1 -> 0) (HIGH TO LOW)for BUTTON ADD (SW1)
+	// Interuption on descending front for BUTTON ADD (SW1) press -> interuption, release -> no interuption
 	EICRA |= (1 << ISC01);
 	EICRA &= ~(1 << ISC00);
 
-	// Autorize interuption INTO
+	// Autorize interuption INTO fro SW1
 	EIMSK |= (1 << INT0);
 
-	// Autorize interuption on group PCINT
+	// Autorize interuption on group PCINT for SW2
 	PCICR |= (1 << PCIE2);
 
 	// Activate the interuption on PD4 (PCINT20) BUTTON SW2
 	PCMSK2 |= (1 << PCINT20);
 
-	// Timer1, CTC mode no prescaler so the timer is stopped
+	// Timer1, CTC mode no prescaler yet so the timer is stopped
 	TCCR1B |= (1 << WGM12);
 
 	// Value to reached

@@ -10,7 +10,7 @@
 
 #define LED PB1
 // To count the number of interuption
-uint8_t interupt_counter = 0;
+volatile uint8_t interupt_counter = 0;
 // To know if the brighness need to go up or down, 1 = down, up = 0
 bool brighness_down = 0;
 
@@ -25,7 +25,10 @@ void init(void);
 int main(void)
 {
 	init();
-	sei();
+
+	// Enable global interupt (sei())
+	__asm__ __volatile__ ("sei" ::: "memory");
+	
 	while (1)
 	{}
 }
@@ -76,8 +79,7 @@ void init(void)
 	TIMSK0 |= (1 << OCIE0A);
 
 // ----------- Timer 1 ------------- //
-	// Activate the Fast PWM mode 5 (8bit) ->  
-	TCCR1B |= (1 << WGM12);
+	// Activate the Fast PWM phase correct mode 1 (8bit) ->  
 	TCCR1A = (1 << WGM10);
 
 	// Set the prescaler to 8 -> to slow down the Timer1 clock

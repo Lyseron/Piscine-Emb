@@ -10,12 +10,12 @@
 
 #define BUTTON PD2
 #define LED PB0
-
-volatile bool button_pressed = false;
+volatile uint8_t interupt_counter = 0;
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
 void init(void);
+void start_timer(void);
 void INT0_vect(void) __attribute__((signal));
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
@@ -23,50 +23,40 @@ void INT0_vect(void) __attribute__((signal));
 int main(void)
 {
 	init();
-	sei();
+
+	// Enable global interupt (sei())
+	__asm__ __volatile__ ("sei" ::: "memory");
 
 	while (1)
-	{
-		if (button_pressed == true)
-		{
-			// Wait for the button to stabilize
-			_delay_ms(20);
-
-			// Wait for the button to be release
-			while (!(PIND & (1 << BUTTON)))
-			{}
-			// Wait for the button to stabilize
-			_delay_ms(20);
-
-			// if the button was pressed and now is realease
-			if (PIND & (1 << BUTTON))
-			{
-				// Set the variable to false for the next press of button
-				button_pressed = false;
-
-				// Clear waiting interuption
-				EIFR = (1 << INTF0);
-
-				// Enable the external interupt again
-				EIMSK |= (1 << INT0);
-				EIMSK &= ~(1 << INT1);
-			}
-		}
-	}
+	{}
 }
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
 void INT0_vect(void)
 {
-	// Toggle the led
-	PORTB ^= (1 << LED);
+	start_timer();
+}
 
-	// Disable the external interupt for the button temporarily
-	EIMSK &= ~(1 << INT0);
+void TIMER0_COMPA_vect(void)
+{
+	interupt_counter++;
+	// around 20ms
+	if (interupt_counter == 2)
+	{
+		// Clear waiting interuption
+		EIFR = (1 << INTF0);
 
-	// Signal that the button was pressed
-	button_pressed = true;
+		// Enable interupt
+		EIMSK |= (1 << INT0);
+		EIMSK &= ~(1 << INT1);
+
+		TCNT0 = 0;
+
+		// Toggle the led
+		PORTB ^= (1 << LED);
+		interupt_counter = 0;
+	}
 }
 
 void init(void)
@@ -78,7 +68,7 @@ void init(void)
 	// For the internal pull up
 	PORTD |= (1 << BUTTON);
 
-	// Descending front for the button generates an interupt request (when press (LOW) -> interuption)
+	// Descending front for the button generates an interupt request (when press -> interuption)
 	EICRA |= (1 << ISC01);
 	EICRA &= ~(1 << ISC00);
 
@@ -89,6 +79,29 @@ void init(void)
 	EIMSK |= (1 << INT0);
 	EIMSK &= ~(1 << INT1);
 
+	// ----------- Timer 0 ------------- //
+	// Mode CTC on timer0
+	TCCR0A |= (1 << WGM01);
+
+	// Interupt around every 10ms
+	OCR0A = 155;
+
+
+	// Autorize the interuption on compare match OCR0A
+	TIMSK0 |= (1 << OCIE0A);
+
+}
+
+void start_timer(void)
+{
+	TCCR0A |= (1 << WGM01);
+	// Desactivate the interuption on the buttonSW1
+	EIMSK &= ~((1 << INT0));
+
+	// Reset the timer at 0
+	TCNT0 = 0;
+	// Set the prescaler to 1024 -> to slow down the Timer0 clock
+	TCCR0B |= (1 << CS00) | (1 << CS02);
 }
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //

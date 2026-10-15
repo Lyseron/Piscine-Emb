@@ -53,8 +53,7 @@ void TIMER0_COMPA_vect(void)
 
 		TCNT0 = 0;
 
-		// Toggle the led
-		PORTB ^= (1 << LED);
+		
 		interupt_counter = 0;
 	}
 }
@@ -97,6 +96,9 @@ void start_timer(void)
 	TCCR0A |= (1 << WGM01);
 	// Desactivate the interuption on the buttonSW1
 	EIMSK &= ~((1 << INT0));
+
+// Toggle the led
+		PORTB ^= (1 << LED);
 
 	// Reset the timer at 0
 	TCNT0 = 0;

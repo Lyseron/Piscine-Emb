@@ -10,15 +10,18 @@
 
 #define BUTTON PD2
 #define LED PB0
+
+// Count the number of interuption (every 10ms)
 volatile uint8_t interupt_counter = 0;
+volatile bool is_release = false;
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
 void init(void);
 void start_timer(void);
+
 void INT0_vect(void) __attribute__((signal));
 void TIMER0_COMPA_vect(void) __attribute__((signal));
-
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -35,31 +38,15 @@ int main(void)
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
+// Called when a falling edge is detected on PD2 (button pressed)
 void INT0_vect(void)
 {
-	start_timer();
-}
+	// Toggle the Led
+	PORTB ^- (1 << LED);
+	_ms_delay(30);
 
-void TIMER0_COMPA_vect(void)
-{
-	interupt_counter++;
-	// around 20ms
-	if (interupt_counter == 2)
-	{
-		// Clear waiting interuption
-		EIFR = (1 << INTF0);
-  // Stop timer0
-  TCCR0A = 0;
-
-		// Enable interupt
-		EIMSK |= (1 << INT0);
-		EIMSK &= ~(1 << INT1);
-
-		TCNT0 = 0;
-
-		
-		interupt_counter = 0;
-	}
+	// Clear pending interupt
+	EIFR = (1 << INTF0);
 }
 
 void init(void)
@@ -71,47 +58,22 @@ void init(void)
 	// For the internal pull up
 	PORTD |= (1 << BUTTON);
 
+	// ----------- Interuption ------------- //
 	// Descending front for the button generates an interupt request (when press -> interuption)
 	EICRA |= (1 << ISC01);
 	EICRA &= ~(1 << ISC00);
 
-	// Clear waiting interuption
+	// Clear pending interupt before enabling it
 	EIFR = (1 << INTF0);
 
-	// Configurate the external interupt for the button INT0
+	// Enable the external interupt for the button (INT0)
 	EIMSK |= (1 << INT0);
-	EIMSK &= ~(1 << INT1);
 
-	// ----------- Timer 0 ------------- //
-	// Mode CTC on timer0
-	TCCR0A |= (1 << WGM01);
-
-	// Interupt around every 10ms
-	OCR0A = 155;
-
-
-	// Autorize the interuption on compare match OCR0A
-	TIMSK0 |= (1 << OCIE0A);
-
-}
-
-void start_timer(void)
-{
-	TCCR0A |= (1 << WGM01);
-	// Desactivate the interuption on the buttonSW1
-	EIMSK &= ~((1 << INT0));
-
-// Toggle the led
-		PORTB ^= (1 << LED);
-
-	// Reset the timer at 0
-	TCNT0 = 0;
-	// Set the prescaler to 1024 -> to slow down the Timer0 clock
-	TCCR0B |= (1 << CS00) | (1 << CS02);
 }
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
 
+// ---------- REGISTER & BIT ----------- //
 /*
 DDRX -> Data Direction Register -> to defined the direction of a pin:
 	DDRD = pins of PORT D
@@ -119,6 +81,7 @@ DDRX -> Data Direction Register -> to defined the direction of a pin:
 			-> Exemple: the chip send a signal to the led
 		- Bitn = 0 -> INPUT (DEFAULT VALUE) -> pin get a signal from an outside components to the microcontroller chip 
 			-> Exemple: a button send an info to the chip
+			Datasheet -> page 72 - 73
 
 PORTX -> register to define the state of a pin (in output) : page 58 datasheet 
 	PORTD -> pins in output of PORT D
@@ -127,20 +90,37 @@ PORTX -> register to define the state of a pin (in output) : page 58 datasheet
 	- Bit PD3(3) -> BLUE
 	- Bit PD3(5) -> RED
 	- Bit PD3(6) -> GREEN
+	Datasheet -> page 59 to 73
+
+// ---------- INTERUPT ----------------- //
 
 EICRA -> External Interrupt Control Register Canal A
-	->Bit ICS01(1)
+	-> Defines what event triggers an externals interrupt
+	->Bit ICS01(1) = 1, ISC00 = 0 -> INT0 is triggered on the falling edge (when button is pressed)
 	Datasheet page -> 54
 
+EIMSK -> External Interrupt Mask Register
+	-> Enables or disable individual external interrupts
+	-> INT0 (bit 0)
+		-> Bit = 1 -> INT- enabled
+		-> Bit = 0 -> INT0 disabled
+
 EIFR -> External interupt Flag register
+	-> Store pending external interupt requests
 	-> When a flag bit is set to 1, it means that an external interrupt request has occured
 	-> We clear the flag to prevent a pending interrupt from being handle when we re-enable the interupt
 	-> To clear a flag bit, we must write a 1 to it.
 	Datasheet page -> 55
+
+SREG -> AVR Status Register
+	-> I bit(7) -> Global Interuption Enable
+	sei() set the I bit to 1
+	Datasheet page -> 11 - 16
 
 void INT0_vect(void) __attribute__((signal))
 	-> ISR function but defined directly
 	-> void INT0_vect -> Interuption for INT0 when changes (here button)
 	-> __attribute((signal)) -> tell the compiler that it is not a regular c fonction but an interuption fonction
 	->Function ISR interupt -> https://github.com/avrdudes/avr-libc/blob/main/include/avr/interrupt.h
+
 */

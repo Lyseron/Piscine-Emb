@@ -9,10 +9,12 @@
 // ------------------------------------------- DEFINE --------------------------------------------------------- //
 
 #define LED PB1
+
 // To count the number of interuption
 volatile uint8_t interupt_counter = 0;
-// To know if the brighness need to go up or down, 1 = down, up = 0
-bool brighness_down = 0;
+
+// To know if the brighness need to go up or down, true = down, up = false
+bool brighness_down = false;
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
@@ -35,16 +37,17 @@ int main(void)
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
+// Called when Timer0 reached OCR0A (around every 10ms)
 void TIMER0_COMPA_vect(void)
 {
-	if (brighness_down == 0)
+	if (brighness_down == false)
 	{
 		// Increase the counter at every Timer0 interrupt (around 10ms)
 		interupt_counter++;
 
 		// At LED full ON, start decreasing
 		if (interupt_counter == 50)
-			brighness_down = 1;
+			brighness_down = true;
 	}
 	else
 	{
@@ -53,9 +56,10 @@ void TIMER0_COMPA_vect(void)
 
 		// At LED full OFF, start increasing
 		if (interupt_counter == 0)
-			brighness_down = 0;
+			brighness_down = false;
 	}
 
+	// Convert counter value (0 to 50) into PWM value (0 to 255)
 	//Update led brighness depending of the nb of interupt
 	OCR1A = interupt_counter * 255 / 50;
 }
@@ -75,11 +79,11 @@ void init(void)
 	// Interupt around every 10ms
 	OCR0A = 155;
 
-	// Autorize the interuption on compare match OCR0A
+	// Enable the interuption on compare match OCR0A
 	TIMSK0 |= (1 << OCIE0A);
 
 // ----------- Timer 1 ------------- //
-	// Activate the Fast PWM phase correct mode 1 (8bit) ->  
+	// Activate the Fast PWM phase correct mode 1 (8bit) -> The 0 is actually 0
 	TCCR1A = (1 << WGM10);
 
 	// Set the prescaler to 8 -> to slow down the Timer1 clock
@@ -96,9 +100,57 @@ void init(void)
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
 /*
 
-TIMSK0 |= (1 << OCIE0A); -> page 88 datasheet
+// ---------- REGISTER & BIT ----------- //
+/*
+DDRX -> Data Direction Register -> to defined the direction of a pin:
+	DDRD = pins of PORT D
+		- Bitn = 1 -> OUTPUT -> the pin send a signal from the microcontroller chip to an outside component 
+			-> Exemple: the chip send a signal to the led
+		- Bitn = 0 -> INPUT (DEFAULT VALUE) -> pin get a signal from an outside components to the microcontroller chip 
+			-> Exemple: a button send an info to the chip
+			Datasheet -> page 72 - 73
 
-Timer0 -> 8 bit timer -> max value = 255
+PORTX -> register to define the state of a pin (in output) : page 58 datasheet 
+	PORTD -> pins in output of PORT D
+		- Bitn = 1 -> HIGH -> the pin give a voltage (close to 5V or 3.3V)
+		- Bitn = 0 -> LOW (DEFAULT VALUE) -> the pin don't get voltage (GND/ 0V)
+	- Bit PD3(3) -> BLUE
+	- Bit PD3(5) -> RED
+	- Bit PD3(6) -> GREEN
+	Datasheet -> page 59 to 73
+
+
+// ---------- TIMER 0 -------------------- //
+
+Timer0 -> 8bit timer
+	-> Count from 0 to 255 maximum
+	Datasheet page 74
+CTC -> Clear Timer on compare match
+	-> Timer0 count from 0 to OCR0A
+	-> When TCNT0 reaches OCR0A, a compare match occurs
+	Datasheet page -> 79
+
+TCCR0A -> Timer0 Control Register A
+	-> Controls the operating mode of Timer0
+		-> CTC = WGM01 = 1, WGM00 = 0, WGM02 = 0
+		Datasheet page -> 84 - 86
+TCCR0B -> Timer0 Control Register B
+	-> CONtrol the Timer clock and prescaler
+		-> Presacaler 1024 -> CS02 = 1, CS01 = 0, CS00 = 0
+		-> TCCR0B = 0 -> STop Timer0 because all clock select bit are 0
+		Datasheet page -> 86-87
+
+TCNT0 -> Timer0 Register
+	-> Contain the current value of timer0 -> from 0 to 255
+		-> TCNT0 = 0 -> Reset Timer0 to 0 
+		Datasheet page -> 87
+
+OCR0A -> OUtput Compare Register A
+	-> COntains the value compared with TCNT0
+		-> OCR0A = 155
+		Datasheet page 79 and 87
+
+		Timer0 -> 8 bit timer -> max value = 255
 	Generate an interupt every 10ms (the interupt that will change the led brighness)
 		CTC mode ->
 		-> Timer0 count from 0 to OCR0A, then compare match on OCR0A, then back to 0
@@ -126,9 +178,28 @@ Number of interupt per second
 			-> fron 51 to 100 -> OCR1A is going dowm -> 100 interupt = aproximately 1s
 
 		So Timer0 can count up to 255 but in CTC here it restarts after 155
+
+		
+// ---------- INTERUPT ----------------- //
+
+SREG -> AVR Status Register
+	-> I bit(7) -> Global Interuption Enable
+	sei() set the I bit to 1
+	Datasheet page -> 11 - 16
+
+void TIMER0_COMPA_vect
+	-> Interupt fonction for Timer0 Compare match A
+	-> Executed when TCNT0 reaches OCR0A
+	Datasheet page -> 49 - 88
+
+// ---------- STATUS ------------------- //
+
+TIMSK0 |= (1 << OCIE0A); -> page 88 datasheet
+
+// ---------- TIMER 1 -------------------- //
 Timer1 -> 
 	To make the led switch on and off very quickly
-	Fast PWM Mode 5 -> 8bit PWM
+	Fast PWM Mode 5 -> 8bit PWM phase correct -> 0 to 255 to 0 
 		-> Timer1 counts from 0 to 255 (so easier than 14 because top is already at 255 no need to configurate ICR1)
 		-> One PWM cycle contains 256 count
 
@@ -150,8 +221,6 @@ OCR1A -> controls how long the LED stays ON
 	OCR1A = 128 -> LED ON about half the time -> 50 % brightness
 	OCR1A = 200 -> LED ON for a longer time -> hight brightness
 		-> The biggest OCR1A is the mode the LED stays ON for each PWM cycle so the brighter she look
-	
-
 
 // ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
 

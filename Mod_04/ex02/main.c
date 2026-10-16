@@ -142,6 +142,7 @@ void init(void)
 	// Activate internal pull_up page 58 - 73
 	PORTD |= (1 << BUTTON_ADD) | (1 << BUTTON_REMOVE);
 
+	// ---------- External interrupt SW1 -------- //
 	// Interuption on descending front for BUTTON ADD (SW1) press -> interuption, release -> no interuption
 	EICRA |= (1 << ISC01);
 	EICRA &= ~(1 << ISC00);
@@ -149,19 +150,23 @@ void init(void)
 	// Autorize interuption INTO fro SW1
 	EIMSK |= (1 << INT0);
 
+	// ---------- External interupt SW2 -------- //
+
 	// Autorize interuption on group PCINT for SW2
 	PCICR |= (1 << PCIE2);
 
 	// Activate the interuption on PD4 (PCINT20) BUTTON SW2
 	PCMSK2 |= (1 << PCINT20);
 
+	// ---------- Timer 1 ---------------------- //
+
 	// Timer1, CTC mode no prescaler yet so the timer is stopped
 	TCCR1B |= (1 << WGM12);
 
-	// Value to reached
+	// Compare match around every 20ms
 	OCR1A = REACHING_VALUE_TIMER1;
 
-	// Autorize interuption when OCR1A is reached
+	// Enable interuption when OCR1A is reached (compare match a)
 	TIMSK1 |= (1 << OCIE1A);
 
 	// for the initial value of 0 -> display nothing
@@ -169,6 +174,7 @@ void init(void)
 
 }
 
+// Display counter as a 4 bit binary nb
 void turnLedON(void)
 {
 	// Tuning off all the led
@@ -193,14 +199,16 @@ void turnLedON(void)
 		PORTB |= (1 << LED_D4);
 }
 
+// Start Timer1 to check button states after 20ms
 void start_timer(void)
 {
-	// Desactivate the interuption INTO during debounce
+	// Desactivate the interuption INTO during debounce SW1
 	EIMSK &= ~(1 << INT0);
-	// Desactivate the interuption on PD4 (PCINT20) duting debounce
+
+	// Desactivate the interuption on PD4 (PCINT20) during debounce SW2
 	PCMSK2 &= ~(1 << PCINT20);
 
-	// PUt the counter back to 0
+	// Put the counter back to 0
 	TCNT1 = 0;
 
 	// Set 1024 prescaler on timer1 and start timer1
@@ -213,6 +221,80 @@ void start_timer(void)
 /*
 
 Interupt vector -> page 49-50
+// ---------- REGISTER & BIT ----------- //
+/*
+DDRX -> Data Direction Register -> to defined the direction of a pin:
+	DDRD = pins of PORT D
+		- Bitn = 1 -> OUTPUT -> the pin send a signal from the microcontroller chip to an outside component 
+			-> Exemple: the chip send a signal to the led
+		- Bitn = 0 -> INPUT (DEFAULT VALUE) -> pin get a signal from an outside components to the microcontroller chip 
+			-> Exemple: a button send an info to the chip
+			Datasheet -> page 72 - 73
+
+PORTX -> register to define the state of a pin (in output) : page 58 datasheet 
+	PORTD -> pins in output of PORT D
+		- Bitn = 1 -> HIGH -> the pin give a voltage (close to 5V or 3.3V)
+		- Bitn = 0 -> LOW (DEFAULT VALUE) -> the pin don't get voltage (GND/ 0V)
+	- Bit PD3(3) -> BLUE
+	- Bit PD3(5) -> RED
+	- Bit PD3(6) -> GREEN
+	Datasheet -> page 59 to 73
+
+PIND -> 
+	Datasheet page -> 73
+
+// ---------- BUTTONS ----------- //
+
+SW1 -> Button ADD
+	-> COnnected to PD2 -> Use INT0 as external interupt
+	Datasheet page -> 53 to 70 - 71
+
+DW2 -> Button Remove
+	-> Connected to PD4 -> Use PCINT20
+	-> Use a pin change interupt
+		-> PCINT20 detect logical changes
+			-> HIGH to LOW -> button pressed
+			-> LOW to HIGH -> button released
+	Datasheet page 53, 56-57 and 70
+
+// ---------- INTERUPT ----------------- //
+
+EICRA -> External Interrupt Control Register Canal A
+	-> Defines what event triggers an externals interrupt
+	->Bit ICS01(1) = 1, ISC00 = 0 -> INT0 is triggered on the falling edge (when button is pressed)
+	Datasheet page -> 54
+
+EIMSK -> External Interrupt Mask Register
+	-> Enables or disable individual external interrupts
+	-> INT0 (bit 0)
+		-> Bit = 1 -> INT- enabled
+		-> Bit = 0 -> INT0 disabled
+
+EIFR -> External interupt Flag register
+	-> Store pending external interupt requests
+	-> When a flag bit is set to 1, it means that an external interrupt request has occured
+	-> We clear the flag to prevent a pending interrupt from being handle when we re-enable the interupt
+	-> To clear a flag bit, we must write a 1 to it.
+	Datasheet page -> 55
+
+SREG -> AVR Status Register
+	-> I bit(7) -> Global Interuption Enable
+	sei() set the I bit to 1
+	Datasheet page -> 11 - 16
+
+void INT0_vect(void) __attribute__((signal))
+	-> ISR function but defined directly
+	-> void INT0_vect -> Interuption for INT0 when changes (here button)
+	-> __attribute((signal)) -> tell the compiler that it is not a regular c fonction but an interuption fonction
+	->Function ISR interupt -> https://github.com/avrdudes/avr-libc/blob/main/include/avr/interrupt.h
+
+
+PCINT -> 
+
+
+
+// ---------- TIMER 1 ----------------- //
+
 
 
 

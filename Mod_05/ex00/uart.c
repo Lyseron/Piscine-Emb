@@ -1,9 +1,5 @@
 // To know the specific name of the components AVR in the right chip (here atmega328p)
 #include <avr/io.h>
-// For interrupt utils
-#include <avr/interrupt.h>
-// For the _delay_ms
-#include <util/delay.h>
 
 // ------------------------------------------- DEFINE & VARIABLE ---------------------------------------------- //
 

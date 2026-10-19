@@ -15,11 +15,12 @@ void uart_printstr(const char *str);
 
 void adc_init(void);
 uint16_t adc_return_value(void);
-void convert_decimal_to_celcius_str(uint16_t value, char cel_value[5]);
+int convert_decimal_to_celcius(uint16_t value);
+void convert_celcus_to_str(int value, char str_value[5]);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> Read the value of the potentiometre and display it in the console in hex format
+// Ex03 -> Read the value of the internal temp captor and display it in the console in celcius format
 int main(void)
 {
 	// Init the UART
@@ -34,8 +35,9 @@ int main(void)
 		// Get the value from ACD
 		value = adc_return_value();
 
-		// Convert the value to Celcius
-		convert_decimal_to_celcius_str(value, cel_value);
+		// Convert the value to Celcius then str
+		int cel = convert_decimal_to_celcius(value);
+		convert_celcus_to_str(cel, cel_value);
 
 		// Print the value to the console
 		uart_printstr(cel_value);
@@ -90,9 +92,33 @@ uint16_t adc_return_value(void)
 	return (value);
 }
 
-void convert_decimal_to_celcius_str(uint16_t value, char cel_value[5])
+int convert_decimal_to_celcius(uint16_t value)
 {
+	int temp;
+	temp = 25 + ((value - 352) * 100) / 128;
+	return (temp);
+}
 
+void convert_celcus_to_str(int value, char str_value[5])
+{
+	uint8_t negatif = 0;
+	if (value < 0)
+	{
+		value *= -1;
+		negatif = 1;
+	}
+	uint8_t cent = (value / 100) % 10;
+	uint8_t diz = (value / 10) % 10;
+	uint8_t unit = value % 10;
+
+	if (negatif == 1)
+		str_value[0] = '-';
+	else
+		str_value[0] = ' ';
+	str_value[1] = cent + '0';
+	str_value[2] = diz + '0';
+	str_value[3] = unit + '0';
+	str_value[4] = '\0';
 }
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
@@ -223,5 +249,22 @@ DIDR0 -> Digital Input Disable Register 0
 	-> Writting 1 disable the corresponding digital input buffer
 		DIDR0 |= (1 << ADC0D) -> or other ADCnbD
 	Datasheet page -> 220
+
+// ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
+
+Calcul of the conversion from adc value to celcius 
+	-> T(Cel) = (25 + (ADC - (273 + 100 - TS_OFFSET)) * 128) / TS_GAIN
+		-> ADC -> Result of the mesure of the captor in 10bit (between 0 and 1023)
+		-> 373 -> 273 + 100 -> Constant used in the manufacturer's calibration formula
+		-> TS_OFFSET -> Coefficient signe that correct the censor offset
+		-> 128 -> Scallling factor for TS_GAIN
+		-> TS_GAIN correct the temperature sensor sensitivity
+		-> 25 -> Temp of reference en celcius
+
+	-> New formula cause we don't have TS_OFFSET or TS_GAIN
+		-> temp = (25 + (adc_vallue - 352) * 100) / 128
+			-> 352 -> Typical result at 25 cellcius 
+			-> differnece between 125degre et 25degre
+			-> 25 temp of comparaison
 
 */

@@ -23,6 +23,17 @@ void led_init(void)
 	DDRB |= (1 << D1) | (1 << D2) | (1 << D3) | (1 << D4);
 }
 
+// Set the RGB LED color by modifying the duty cycle (when a event occur)
+void set_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+	// RED -> Timer0 channel B -> interact with PD5
+	OCR0B = r;
+	// GREEN -> Timer0 channel A -> interact with PD6
+	OCR0A = g;
+	// BLUE -> Timer2 channel B -> interact with PD3
+	OCR2B = b;
+}
+
 // Generate a gradient using two primary color at the time
 void wheel(uint8_t pos) 
 {

@@ -20,7 +20,7 @@ void convert_to_string(uint16_t value, char str_value[5]);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> Read the value of the potentiometre and display it in the console in hex format
+// Ex02 -> Read the value of the potentiometre and display it in the console in decimal format
 int main(void)
 {
 	// Init the UART

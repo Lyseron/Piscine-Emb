@@ -60,7 +60,7 @@ void TIMER0_COMPA_vect(void)
 	}
 
 	// Convert counter value (0 to 50) into PWM value (0 to 255)
-	//Update led brighness depending of the nb of interupt
+	// Update led brighness depending of the nb of interupt
 	OCR1A = interupt_counter * 255 / 50;
 }
 
@@ -98,7 +98,6 @@ void init(void)
 
 
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
-/*
 
 // ---------- REGISTER & BIT ----------- //
 /*

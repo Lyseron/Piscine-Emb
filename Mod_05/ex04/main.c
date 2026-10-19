@@ -18,11 +18,9 @@ void wheel(uint8_t pos);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> Read the value of the potentiometre and display it in the console in hex format
+// Ex04 -> Read the value of the potentiometre and display it as a jauge with D1-D4 LED and as a color with RGB LED
 int main(void)
 {
-	// Init the UART
-	uart_init();
 
 	// Init the potensiometre
 	adc_init();

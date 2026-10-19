@@ -221,8 +221,9 @@ void start_timer(void)
 /*
 
 Interupt vector -> page 49-50
+
 // ---------- REGISTER & BIT ----------- //
-/*
+
 DDRX -> Data Direction Register -> to defined the direction of a pin:
 	DDRD = pins of PORT D
 		- Bitn = 1 -> OUTPUT -> the pin send a signal from the microcontroller chip to an outside component 
@@ -294,12 +295,5 @@ PCINT ->
 
 
 // ---------- TIMER 1 ----------------- //
-
-
-
-
-// ------------------------------------------- CALCUL & FORMULA ----------------------------------------------- //
-
-
 
 */

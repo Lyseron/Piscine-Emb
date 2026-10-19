@@ -11,7 +11,6 @@ char	hex_value[3];
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
 void uart_init(void);
-void uart_tx(char c);
 void uart_printstr(const char *str);
 
 void adc_init(void);
@@ -38,16 +37,15 @@ int main(void)
 		while (ADCSRA & (1 << ADSC))
 		{}
 
-		// Tell if the conversion is done
-		if (ADCSRA & (1 << ADIF))
-			// Stock the result of the conversion
-			value = ADCH;
+		// Stock the result of the conversion
+		value = ADCH;
 		convert_decimal_to_hex(value, hex_value);
 		uart_printstr(hex_value);
 		uart_printstr("\n\r");
 		_delay_ms(20);
 	}
 }
+
 
 // ------------------------------------------- FUNCTION UTILS ------------------------------------------------- //
 
@@ -66,7 +64,7 @@ void adc_init(void)
 	// Enable ADC
 	ADCSRA = (1 << ADEN);
 
-	// Set a prescaler of 128 to get 125 000 kHz
+	// Set a prescaler of 128 to get 125kHz
 	ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 }
 
@@ -74,8 +72,6 @@ void convert_decimal_to_hex(uint8_t value, char result[3])
 {
 	uint8_t first = value / 16;
 	uint8_t second = value % 16;
-	char first_char;
-	char second_char;
 	const char letters[] = "ABCDEF";
 
 	if (first <= 9)

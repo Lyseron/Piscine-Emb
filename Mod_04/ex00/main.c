@@ -11,17 +11,11 @@
 #define BUTTON PD2
 #define LED PB0
 
-// Count the number of interuption (every 10ms)
-volatile uint8_t interupt_counter = 0;
-volatile bool is_release = false;
-
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
 void init(void);
-void start_timer(void);
 
 void INT0_vect(void) __attribute__((signal));
-void TIMER0_COMPA_vect(void) __attribute__((signal));
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -42,8 +36,8 @@ int main(void)
 void INT0_vect(void)
 {
 	// Toggle the Led
-	PORTB ^- (1 << LED);
-	_ms_delay(30);
+	PORTB ^= (1 << LED);
+	_delay_ms(30);
 
 	// Clear pending interupt
 	EIFR = (1 << INTF0);
@@ -102,7 +96,7 @@ EICRA -> External Interrupt Control Register Canal A
 EIMSK -> External Interrupt Mask Register
 	-> Enables or disable individual external interrupts
 	-> INT0 (bit 0)
-		-> Bit = 1 -> INT- enabled
+		-> Bit = 1 -> INT0 enabled
 		-> Bit = 0 -> INT0 disabled
 
 EIFR -> External interupt Flag register

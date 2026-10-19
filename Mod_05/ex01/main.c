@@ -20,7 +20,7 @@ void convert_decimal_to_hex(uint8_t value, char result[3]);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> Read the value of the potentiometre and display it in the console in hex format
+// Ex01 -> Read the value of the potentiometre, photosensor and temp captor and display it in the console in hex format
 int main(void)
 {
 	// Init the UART
@@ -77,8 +77,6 @@ void convert_decimal_to_hex(uint8_t value, char result[3])
 {
 	uint8_t first = value / 16;
 	uint8_t second = value % 16;
-	char first_char;
-	char second_char;
 	const char letters[] = "ABCDEF";
 
 	if (first <= 9)
@@ -117,10 +115,9 @@ uint8_t adc_return_value(uint8_t hardware_to_read)
 	while (ADCSRA & (1 << ADSC))
 	{}
 
-	// Tell if the conversion is done
-	if (ADCSRA & (1 << ADIF))
-		// Stock the result of the conversion
-		value = ADCH;
+	// Stock the result of the conversion
+	value = ADCH;
+
 	return (value);
 }
 

@@ -20,12 +20,17 @@ void i2c_init(void);
 void i2c_start(void);
 void i2c_stop(void);
 void i2c_write(unsigned char data);
-void i2c_read(void);
+bool i2c_read_me(uint8_t *read);
 void check_status_and_init_if_needed(void);
-void print_hex_value(char c);
 bool send_address(uint8_t mode);
 bool getStatus(uint8_t *status);
 bool start_measurement(void);
+
+float get_moyen_3mesure(float mes1, float mes2, float mes3, float nb_of_mesure);
+float get_one_temp_mesure_in_cel(uint8_t reading[7]);
+float get_one_humidity_mesure_in_pourcent(uint8_t reading[7]);
+
+void print_result(float temp_f, float humidity_f);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -43,6 +48,13 @@ int main(void)
 	// -> If calibration bit == 1, sensor is ready
 	check_status_and_init_if_needed();
 
+	// To stock the 3 reading of temp and humidity
+	float temp[3] = {0};
+	float humidity[3] = {0};
+
+	// nb of valid mesurement stored (max 3)
+	uint8_t nb_of_mesure = 0;
+
 	// Infinite loop --> repeat mesurements continuously
 	while (1)
 	{
@@ -57,6 +69,9 @@ int main(void)
 			// -> Return true if the sensor acknowledges its adress
 			if (send_address(1) == true)
 			{
+				uint8_t reading[7];
+				bool read_success = true;
+
 				// Reset the counter before each mesurement
 				counter = 0;
 
@@ -66,17 +81,45 @@ int main(void)
 				// -> Bytes 6 is received with NACK
 				for (uint8_t i = 0; i < 7; i++)
 				{
-					i2c_read();
-
-					// Print a space between each bytes, no space after the last byte
-					if (i < 6)
-						uart_printstr(" ");
+					// Read one byte and store it into reading[]
+					if (i2c_read_me(&reading[i]) == false)
+					{
+						uart_printstr("MESURMENT failed\r\n");
+						read_success = false;
+						break ;
+					}
 				}
-				// Print a new line after the 7 received bytes
-				uart_printstr("\r\n");
+				// Continue only if all 7 bytes were received okay
+				if (read_success == true)
+				{
+					// Convert the 7 bytes into temperature and humidity
+					float new_temp = get_one_temp_mesure_in_cel(reading);
+					float new_humidity = get_one_humidity_mesure_in_pourcent(reading);
+					
+					// Fill the arrays until 3 measurements are stored
+					if (nb_of_mesure < 3)
+					{
+						temp[nb_of_mesure] = new_temp;
+						humidity[nb_of_mesure] = new_humidity;
+						nb_of_mesure++;
+					}
+					else
+					{
+						temp[0] = temp[1];
+						temp[1] = temp[2];
+
+						humidity[0] = humidity[1];
+						humidity[1] = humidity[2];
+
+						// Store the newest measurement
+						temp[2] = new_temp;
+						humidity[2] = new_humidity;
+					}
+					float moy_temp = get_moyen_3mesure(temp[0], temp[1], temp[2], nb_of_mesure);
+					float moy_humidity = get_moyen_3mesure(humidity[0], humidity[1], humidity[2], nb_of_mesure);
+					print_result(moy_temp, moy_humidity);
+				}
 			}
-			else
-				uart_printstr("MESURMENT not acknoledged, failed\r\n");
 		}
 		else
 			uart_printstr("AHT20 address not acknoledged, failed\r\n");
@@ -178,7 +221,7 @@ void i2c_write(unsigned char data)
 // Receive one byte from the AHT20 through I2C
 // -> The sensor sends the byte
 // -> The master sends ACK or NACK after receiving it
-void i2c_read(void)
+bool i2c_read_me(uint8_t *read)
 {
 	// Start receiving the data and TWEA for send ACK
 	// ACK -> says that the octect has been receive and is ready for the next
@@ -208,17 +251,18 @@ void i2c_read(void)
 	{
 		// Read the received byte from TWDR
 		// -> TWDR containss the last byte received from the AHT20
-		unsigned char data = TWDR;
-
-		// Print the byte into the hex value and print it on the PC
-		print_hex_value(data);
+		*read = TWDR;
 	}
 	else
+	{
 		// The byte reception did not return the expected status
 		uart_printstr("READ failed\r\n");
+		return (false);
+	}
 
 	// Increment counter for the next byte
 	counter++;
+	return (true);
 }
 
 

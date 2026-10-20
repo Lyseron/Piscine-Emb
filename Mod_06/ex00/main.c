@@ -56,7 +56,8 @@ int main(void)
 		// Send a STOP on the I2C bus -> Stop the communication
 		i2c_stop();
 
-		_delay_ms(1000);
+		uart_printstr("\r\n");
+		_delay_ms(2000);
 	}
 }
 

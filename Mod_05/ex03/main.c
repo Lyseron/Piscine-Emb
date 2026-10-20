@@ -94,9 +94,16 @@ uint16_t adc_return_value(void)
 
 int convert_decimal_to_celcius(uint16_t value)
 {
-	int temp;
-	temp = 25 + ((value - 352) * 100) / 128;
-	return (temp);
+	// 100 for 125 - 25 and 128 for 352avc value for 25degre - 480 avc value for 125degre
+	float one_avc_unit = 100.0f / 128.0f; // equal 0.78125degres per 1 adc unit
+
+	// we multiply the value we juste read with the value for 1degres
+	float result = value * one_avc_unit;
+
+	// since 352 = 25 -> 352 * 0.78125 = 275 -> 275 to get 25 = 275 - 250
+	result = result - 250;
+
+	return ((int)result);
 }
 
 void convert_celcus_to_str(int value, char str_value[5])
@@ -267,4 +274,5 @@ Calcul of the conversion from adc value to celcius
 			-> differnece between 125degre et 25degre
 			-> 25 temp of comparaison
 
+	Datasheet page -> 215
 */

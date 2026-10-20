@@ -1,12 +1,15 @@
 // to know the specific name of the components AVR in the right microcontroller (here atmega328p in makefile)
 #include <avr/io.h>
-
+#include <util/delay.h>
 #include <util/twi.h>
+#include <stdbool.h>
 
 // ------------------------------------------- DEFINE & VARIABLE ---------------------------------------------- //
 
-// Datasheet page -> 
-#define AHT20 0x38
+// Count the received bytess
+// -> First 6 bytes -> Send ACK
+// -> Last bytes(7th) -> send NACK
+uint8_t counter = 0;
 
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
@@ -18,7 +21,11 @@ void i2c_start(void);
 void i2c_stop(void);
 void i2c_write(unsigned char data);
 void i2c_read(void);
+void check_status_and_init_if_needed(void);
 void print_hex_value(char c);
+bool send_address(uint8_t mode);
+bool getStatus(uint8_t *status);
+bool start_measurement(void);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
@@ -28,18 +35,59 @@ int main(void)
 	// Init the UART
 	uart_init();
 
-	// Init the I2C at 100kHz
+	// Init the I2C -> communication speed = 100kHz
 	i2c_init();
 
-	// Infinite loop
+	// Check if the AHT20 is calibrated
+	// -> If calibration bit == 0, send the initialization command
+	// -> If calibration bit == 1, sensor is ready
+	check_status_and_init_if_needed();
+
+	// Infinite loop --> repeat mesurements continuously
 	while (1)
 	{
-		// Send a START on the I2C bus -> start the comuunication -> send to all peripherique that a transmission IC2 as started
-		i2c_start();
+		// If the measurement started correctly
+		if (start_measurement() == true)
+		{
+			// Wait at least 80ms dor the sensor to perform the mesurement
+			_delay_ms(80);
 
+			// Send START and AHT20 address in READ mode
+			// -> Read = 1 -> Master wants to receive the measurement
+			// -> Return true if the sensor acknowledges its adress
+			if (send_address(1) == true)
+			{
+				// Reset the counter before each mesurement
+				counter = 0;
+
+				// Read the 7 bytes returned by the sensor
+				// -> Each call to i2c_read() receives one byte
+				// -> Bytes 0 to 5 are received with ACK
+				// -> Bytes 6 is received with NACK
+				for (uint8_t i = 0; i < 7; i++)
+				{
+					i2c_read();
+
+					// Print a space between each bytes, no space after the last byte
+					if (i < 6)
+						uart_printstr(" ");
+				}
+				// Print a new line after the 7 received bytes
+				uart_printstr("\r\n");
+			}
+			else
+				uart_printstr("MESURMENT not acknoledged, failed\r\n");
+		}
+		else
+			uart_printstr("AHT20 address not acknoledged, failed\r\n");
 		
-		// Send a STOP on the I2C bus -> Stop the communication
+
+		// Send STOP -> Release the I2C bus -> Stop the communication
 		i2c_stop();
+
+		// Wait before starting a new measurement -> Recommanded interval 2 second
+		// AHT20 datasheet -> page 5
+		_delay_ms(2000);
 	}
 }
 
@@ -61,13 +109,14 @@ void i2c_init(void)
 // Send a START on the I2C bus -> start the comuunication -> send to all peripherique that a transmission IC2 as started
 void i2c_start(void)
 {
+	// TWINT = 1 -> clear the previous operation flag
+	// TWEN = 1 -> keep the TWI hardware enabled
+	// TWSTA = 1 -> request a START condition
 	// Used to request master control of the bus
-	TWCR |= (1 << TWSTA);
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTA);
 
-	// Keeps TWI hardware to control SDA and SCL Enable and remove the last operation flag and alllow the TWI to continue with the next operation
-	TWCR |= (1 << TWEN) | (1 << TWINT);
-
-	// Wait for the end of the operation -> = 1 = is finish
+	// Wait until the START operation is completed
+	// Hardware sets TWINT = 1 when the operation is finished
 	while (!(TWCR & (1 << TWINT)))
 	{}
 
@@ -75,59 +124,101 @@ void i2c_start(void)
 	//	TW_STATUS -> Store the status of TWSR -> resuslt of operation
 	//	TW_START -> 0x08 -> START confition has be transmitted
 	// Datahseet tab for code page -> 186
-	if (TW_STATUS == TW_START)
-		uart_printstr("START transmisson successfull STATUS CODE: 0x08\r\n");
-	else
+	if (TW_STATUS != TW_START)
 		uart_printstr("START transmisson failed\r\n");
 
 }
 
-// Send a STOP on the I2C bus -> Stop the communication
+// Send a STOP conditions on the I2C bus -> Stop the communication and releases the bus
 void i2c_stop(void)
 {
+	// TWINT = 1 -> alow the next TWI operation
+	// TWEN = 1 -> keeps the TWI hardware enabled
+	// TWSTO = 1 -> request a STOP  condition
 	// To terminate the master communication -> generate a stop condition
-	TWCR |= (1 << TWSTO);
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 
-	// Keeps TWI hardware to control SDA and SCL Enable and remove the last operation flag and alllow the TWI to continue with the next operation
-	TWCR |= (1 << TWEN) | (1 << TWINT);
-
-	// Wait for the end of the operation -> = 0 = stop is executed -> TWSTO is automaticly clear by hardware (0)
+	// Wait for the end of the operation -> = 0 = stop is executed 
+	// -> TWSTO is automaticly clear by hardware (0)
 	while (TWCR & (1 << TWSTO))
 	{}
 
 	// print the success
-	uart_printstr("STOP transmisson completed\r\n");
+	// uart_printstr("STOP transmisson completed\r\n");
 
 }
 
+// Send one byte to the AHT20 through I2C
+// -> The Master transmits data and the sensor return ACK or NACK
 void i2c_write(unsigned char data)
 {
-	// Load the data into TWDR
+	// Load the bytes into the TWI data Register
+	// -> TWDR contains the byte that will be transmitted
 	TWDR = data;
 
-	// STart transmitting the data
+	// TWINT = 1 -> clear the flagg and start the transmission
+	// TWEN = 1 -> keeps the TWI hardware enabled
 	TWCR = (1 << TWINT) | (1 << TWEN);
 
-	// Wait until transmission is completed
+	// Wait until the byte transmission is completed
+	// -> TWINT becomes 1 when the operation is finished
 	while (!(TWCR & (1 << TWINT)))
 	{}
 
-	// CHeck if the data was acknowledged
-	if (TW_STATUS == TW_MT_DATA_ACK)
-		uart_printstr("DATA acknowledged, success\r\n");
-	else
+	// CHeck if the data was acknowledged by the Slave
+	// TW_STATUS -> Current TWI status code
+	// TW_MT_DATA_ACK -> 0x28, data transmitted and ACK received
+	// ACK -> says that the octect has been receive and is ready for the next
+	if (TW_STATUS != TW_MT_DATA_ACK)
 		uart_printstr("DATA not acknowledged, failed\r\n");
 		
 }
 
+
+// Receive one byte from the AHT20 through I2C
+// -> The sensor sends the byte
+// -> The master sends ACK or NACK after receiving it
 void i2c_read(void)
 {
+	// Start receiving the data and TWEA for send ACK
+	// ACK -> says that the octect has been receive and is ready for the next
+	// NACK -> says that the octet has been receive but don't send more
+	
+	// Receive the first 6 bytes with ACK
+	// -> TWEA = 1 -> Master sends ACK after receiving the byte
+	// -> ACK tells the sensor that the Master wants the next byte
+	if (counter < 6)
+		TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
+	else
+		// Receive the last byte (7th) with NACK
+		// TWEA = 0 -> Master sends NACK
+		// -> NACK tells the sensor that the Master does not want more bytes
+		TWCR = (1 << TWINT) | (1 << TWEN);
 
-}
+	// Wait until one byte has been received
+	// -> TWINT becomes 1 when reception is completed
+	while (!(TWCR & (1 << TWINT)))
+	{}
 
-void print_hex_value(char c)
-{
+	// Check if the bytes was received correctly
+	// -> TW_MR_DATA_ACK = 0x50 -> byte received and ACK returned
+	// -> TW_MR_DATA_NACK = 0x58 -> byte received and NACK returned
+	if ((counter < 6 && TW_STATUS == TW_MR_DATA_ACK)
+	|| (counter == 6 && TW_STATUS == TW_MR_DATA_NACK))
+	{
+		// Read the received byte from TWDR
+		// -> TWDR containss the last byte received from the AHT20
+		unsigned char data = TWDR;
 
+		// Print the byte into the hex value and print it on the PC
+		print_hex_value(data);
+	}
+	else
+		// The byte reception did not return the expected status
+		uart_printstr("READ failed\r\n");
+
+	// Increment counter for the next byte
+	counter++;
 }
 
 
@@ -167,6 +258,83 @@ page -> 8
 		-> Acts as the slave device on the I2C bus
 		-> Controlled by the atMega (master)
 
+		-> I2C address = 0x38
+		-> Temp measurement = 20 bits
+		-> Humidity measurement = 20 bits
+
+	The AHT20 send a measurement using 7 bytes -> 
+		-> each byte contains 8 bits
+		-> TWDR con contain only one byt at the time
+		-> We must read TWDR 7 times to get the full measurement
+	Exemple subject -> 0C 79 9A A6 4E 3C F2
+	7x 8 bit octet for the full reading:
+		Octet 0 -> OC -> Status of the aht20
+		Octet 1 -> 79 -> Humidity data
+		Octet 2 -> 9A -> Humidity data
+		Octet 3 -> A6 -> End of Humidity data and start of temp data
+		Octet 4 -> 4E -> Temp data
+		Octet 5 -> 3C -> Temp data
+		Octet 6 -> F2 -> CRC -> check if the data is correct
+	Page 8 -> aht20 datasheet 
+
+AHT20 Status -> One byte received from the sensor
+	-> Contains info about the sensor state
+		-> Bit 7 -> BUSY
+			-> 1 = Sensor is busy
+			-> 0 = Sensor is not busy 
+		-> Bit 3 -> Calibration Enable
+			-> 1 = Calibration enabled
+			-> 0 = Sensor initialization required
+
+// ------------------ TWI STATUS CODE ------- //
+
+TW_STATUS -> Indicates the result of the last TWI operation
+
+TW_START = 0x08
+	-> START conditions transmitted
+
+WRITE MODE (MASTER TRANSMITTER):
+
+	TW_MT_SLA_ACK = 0x18
+		-> ADDress + WRITE transmitted
+		-> ACK received from the slave
+
+	TW_MT_SLA_NACK = 0x20
+		-> Address + WRITE transmitted
+		-> NACK received from the Slave
+	
+	TW_MT_DATA_ACK = 0x28
+		-> Data byte transmitted
+		-> ACK received from the Slave
+
+	TW_MT_DATA_NACK = 0x30
+		-> Data byte transmitted
+		-> NACK received from the Slave
+
+READ MODE (MASTER RECEIVER):
+
+	TW_MR_SLA_ACK = 0x40
+		-> Address + READ transmitted
+		-> ACK received from the Salve
+	
+	TW_MR_SLA_NACK = 0x48
+		-> Address + READ transmitted
+		-> NACK received from the Slave
+
+	TW_MR_DATA_ACK
+		-> Data byte received
+		-> ACK return by the Master
+
+	TW_MR_DATA_NACK = 0x58
+		-> Data byte received
+		-> NACK returned by the Master
+
+-> MT = Master Transmitter
+-> MR = Master Receiver
+-> SLA = Slave Address
+-> DATA = Data byte
+Datasheet page -> 189
+
 // -------------------------------- PROTOCOL ----------------------------- //
 
 // ------------------ I2C ------------------- //
@@ -174,33 +342,60 @@ page -> 8
 I2C -> Inter-Integrated Circuit -> The protocol for the hardware TWI
 	-> Serial communication protol that allows communication between multiple device
 	-> Used only 2 communication lines
+
 	-> SCL -> Serial Clock line
 		-> Carries the clock signal
 		-> Synchronizes data transmission
 		-> Usually generated by master
 
-	-> SDA --> Serial Data Line
+	-> SDA -> Serial Data Line
 		-> Carries data between devices
 		-> Biderectional communication
+		-> Used to transmit addresses, commands and measurement
+
+	-> BUS -> Shared communication wires
+		-> Several devices can use the same SDA and SCL lines
+		-> Each Slave is selected using its I2C address
 
 	-> Master -> Control the communication
 		-> Generates the clock signal
-		-> Starts and stops transmission
+		-> Starts the communication
+		-> Select slave using its address
 		-> Selects the slave using its address
+		-> Sends commands
+		-> Request data
 
 	-> Slave -> Respond to the master
-		-> Receives or sends data when addressed
+		-> Recognizes its address
+		-> Receives commands
+		-> Sends data when addressed bu master
 	
 	-> START -> Begins an I2C transmission
+		-> Generated by the master
+		-> SDA goes from HIGH to LOW whille SCL is HIGH
+		-> Tells the devices that a communication is starting
 	-> STOP -> Ends a I2C transmission
-	-> ACK -> ACKnozledge, confirms byte reception
-	-> NACK -> Not ACKnowledge, no acknolegment received
-	-> Each data byte contains 8 bit
-	-> An ACK/NACK bit follows each byte
-		->
-	
-	-> Support multiple device on the same bus
-		-> bus ->
+		-> Generated by the master
+		-> SDA goes from LOW to HIGH while SCLL is HIGH
+		-> Releases the I2C bus
+
+	ACK -> Acknowlledge
+		-> Confirm that an octet was acknowledged
+	NACK -> Not Acknowledge
+		-> No acknoledgement of the octet
+		-> Can also indicate the end of a READ communication
+	Each data byte contains 8 bits
+		-> ACK?NACK comes after there 8 bits, it is not stored insing TWDR
+
+	When ehe Master transmit:
+		-> ATmega sends an octet 
+		-> AHT20 answer with ACK or NACK
+
+	When the master recives:
+		-> AHT20 sends an octet
+		-> Atmega answer eith ACK or NACK
+			-> ACK -> Byte received, send the next one
+			-> NACK -> Last byte received, stop sending more bytes
 	Here:
 		-> Master -> Atmega
 		-> Slave -> AHT20 temp sensor
@@ -256,12 +451,14 @@ TWCR -> Control the TWI peripherique
 		-> Bit TWINT(7) -> TWI Interrupt Flag
 			-> Set to 1 by hardware when an operation finishes
 			-> Writting 1 clears the flag
+			-> learing the flag alows the next operation to continue
+			-> Read 1 to know if the operation is complketed
 			-> Used to wait for operation completion
 
 		-> Bit TWEA(6) -> TWI Enable Acknowledge
 			-> Control ACK generation
-			-> = 1 -> Enable automatic ACK generation
-			-> = 0 -> Disable automatic ACK generation
+			-> = 1 -> Rceived data and send ACK
+			-> = 0 -> received data and send NACK
 			-> ACK confirms that a byte was received
 			-> Used when receiving data as master or slave
 			-> also used for slave address recognition

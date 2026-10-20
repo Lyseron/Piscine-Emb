@@ -29,7 +29,7 @@ bool start_measurement(void);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> 
+// Ex01 -> Print the measurement of the ATH20 in hex form
 int main(void)
 {
 	// Init the UART

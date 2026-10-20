@@ -34,7 +34,7 @@ void print_result(float temp_f, float humidity_f);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> 
+// Ex02 -> Print the measurement of humidity and temperature of the AHT20 in pourcentage and celcius
 int main(void)
 {
 	// Init the UART

@@ -19,7 +19,7 @@ void i2c_stop(void);
 
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
-// Ex00 -> 
+// Ex00 -> Init, Start and stop a communication and write the status of each
 int main(void)
 {
 	// Init the UART

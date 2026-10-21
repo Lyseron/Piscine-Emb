@@ -75,7 +75,9 @@ void adc_init(void)
 
 uint16_t adc_return_value(uint8_t hardware_to_read)
 {
+	// bit low -> from 0 to 7
 	uint16_t low = 0;
+	// bit high -> 8 and 9
 	uint16_t high = 0;
 	uint16_t value = 0;
 

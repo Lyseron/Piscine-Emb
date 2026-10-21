@@ -148,6 +148,7 @@ ADCSRA -> ADC Control and Status Register A -> 8 bit register to controll the AD
 		-> fADC = should be between 50kHz and 200kHz -> page 208 datasheet
 			-> with a 128 prescaler 16 000 000 / 128 = 125 000Hz -> page 219 datasheet
 				-> for 128 -> ADPS2 = 1, ADPS1 = 1, ADPS0 = 1
+			// if too fast -> loose precision
 	Datasheet page -> 207-210, 218-219
 
 // ------------------ ADCSRB ------------------ //

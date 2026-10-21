@@ -82,6 +82,39 @@ void led_jauge(uint8_t value)
 		PORTB &= ~(1 << D4);
 }
 
+// Confingure Timer0 and Timer2 to generate three PWM signal
+void init_rgb(void)
+{
+	// Configurate the LED RGB as output
+	DDRD |= (1 << PD3) | (1 << PD5) | (1 << PD6);
+
+	// Activate the PWM mode 3 (Top = 255)
+		// Timer 0 ->
+	TCCR0A |= (1 << WGM01) | (1 << WGM00);
+		// Timer 2 ->
+	TCCR2A |= (1 << WGM21) | (1 << WGM20);
+
+	// Set the prescaler to 64 -> to slow down the Timers clock
+		// Timer 0 ->
+	TCCR0B |= (1 << CS01) | (1 << CS00);
+		// Timer 2 ->
+	TCCR2B |= (1 << CS22);
+
+	// Non inverted PMW -> Start HIGH at bottom (0) then becomes LOW on compare match
+		// Timer0 for PD6 and PD5 -> compare match : 0CR0A / OCR0B
+	TCCR0A |= (1 << COM0A1) | (1 << COM0B1);
+		// Timer 2 for PD3 -> compare match 0CR2B
+	TCCR2A |= (1 << COM2B1);
+
+	// Init start to count at 0
+	// PD5 -> RED
+	OCR0B = 0;
+	// PD6 -> GREEN
+	OCR0A = 0;
+	// PD3 -> BLUE
+	OCR2B = 0;
+}
+
 // ------------------------------------------- NOTES ---------------------------------------------------------- //
 /*
 

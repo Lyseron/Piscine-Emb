@@ -11,6 +11,7 @@ char	hex_value[3];
 // ------------------------------------------- FUNCTION DECLARATION ------------------------------------------- //
 
 void adc_init(void);
+void init_rgb(void);
 
 void led_init(void);
 void led_jauge(uint8_t value);
@@ -27,6 +28,9 @@ int main(void)
 
 	// Init the Leds
 	led_init();
+
+	// Init the RGB led
+	init_rgb();
 
 	// Infinite loop
 	while (1)

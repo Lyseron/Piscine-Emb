@@ -4,7 +4,7 @@
 
 ### Low-Level C Programming on the ATmega328P
 
-**GPIO · Timers · PWM · UART · Interrupts · ADC · I²C · EEPROM**
+**GPIO · Timers · PWM · UART · Interrupts · ADC · I²C**
 
 *A hands-on journey through microcontroller programming, from manipulating individual pins to controlling hardware peripherals directly through registers.*
 
@@ -24,10 +24,9 @@
 8. [Module 04 — Interrupts](#8-module-04--interrupts)
 9. [Module 05 — Analog-to-Digital Conversion](#9-module-05--analog-to-digital-conversion)
 10. [Module 06 — I²C Bus and AHT20 Sensor](#10-module-06--ic-bus-and-aht20-sensor)
-11. [Module 07 — EEPROM Memory](#11-module-07--eeprom-memory)
-12. [Register Reference](#12-register-reference)
-13. [Known Limitations and Improvements](#13-known-limitations-and-improvements)
-14. [References](#14-references)
+11. [Register Reference](#12-register-reference)
+12. [Known Limitations and Improvements](#13-known-limitations-and-improvements)
+13. [References](#14-references)
 
 ---
 
@@ -46,7 +45,6 @@ Every `Mod_XX/exYY` directory contains its own source code and `Makefile`. The e
 | [`Mod_04`](Mod_04/) | External interrupts, timers, pin-change interrupts | `ex00`–`ex02` |
 | [`Mod_05`](Mod_05/) | ADC, potentiometer, light and temperature sensing | `ex00`–`ex04` |
 | [`Mod_06`](Mod_06/) | I²C/TWI, AHT20 temperature and humidity sensor | `ex00`–`ex02` |
-| [`Mod_07`](Mod_07/) | EEPROM and memory reading | `ex00` (unfinished) |
 
 **Target environment:** `avr-gcc`, `avr-objcopy`, `avrdude`, `make`, and an ATmega328P running at the **16 MHz** clock frequency assumed by the Makefiles. The Makefiles examined use the `arduino` programmer configuration and `/dev/ttyUSB0` as the serial device. Exact LED/button wiring depends on your board. Names such as `PB0` and `PD2` refer to **microcontroller port bits**, not Arduino digital pin numbers.
 
@@ -390,33 +388,7 @@ Helper routines format the values before UART transmission. **Registers:** TWI (
 
 ---
 
-## 11. Module 07 — EEPROM Memory
-
-**Goal:** understand the microcontroller's internal EEPROM, which retains data when power is removed. The ATmega328P has **1024 bytes** of EEPROM, addressed from `0x000` to `0x3FF`.
-
-### `ex00` — Work-in-Progress EEPROM Hex Dump
-
-[View source](Mod_07/ex00/main.c). Comments describe a utility intended to read EEPROM as **16-byte rows**, showing addresses, hexadecimal values, and printable ASCII characters. The current code defines an empty `init_eeprom()` function and attempts to read data with `eeprom_read_byte()`.
-
-**Actual status: unfinished.** The variable `ligne` is used without being declared; the argument passed to `eeprom_read_byte` is not converted to a valid EEPROM address pointer; the outer loop advances by one byte rather than one 16-byte row; the final iterations would read beyond the `0–1023` address range; and no UART hex-dump output has been implemented yet. This exercise should not be considered operational.
-
-### EEPROM Hardware Registers
-
-| Register | Purpose |
-|:--|:--|
-| `EEARL` | Low eight bits of EEPROM address |
-| `EEARH` | High address bits (only two extra bits are needed on ATmega328P) |
-| `EEAR` | 16-bit address view combining `EEARH:EEARL` |
-| `EEDR` | Byte to program, or byte returned by a read |
-| `EECR` | EEPROM operation control and status |
-
-Within `EECR`, `EERE` initiates a read; `EEPE` starts and indicates a write in progress; `EEMPE` briefly enables the protected programming sequence; `EEPM1:0` selects erase/write modes; and `EERIE` enables the EEPROM-ready interrupt. A low-level read sets `EEAR`, waits for any active write to finish (`EEPE=0`), triggers `EERE`, and reads `EEDR`. Writing requires the protected `EEMPE` → `EEPE` sequence within the timing limits specified by the manufacturer.
-
-`<avr/eeprom.h>` provides higher-level routines such as `eeprom_read_byte()` and `eeprom_update_byte()`, avoiding much of the direct hardware sequencing. **In the provided source, `EEAR`, `EEDR`, and `EECR` are chiefly discussed in comments; this exercise does not implement direct access to those registers.**
-
----
-
-## 12. Register Reference
+## 11. Register Reference
 
 The table below summarizes relevant registers appearing **in the source code or its explanatory comments**, together with the bits used by the exercises. Descriptions apply to the ATmega328P.
 
@@ -491,7 +463,7 @@ ADC conversion clock:
 
 ---
 
-## 13. Known Limitations and Improvements
+## 12. Known Limitations and Improvements
 
 This repository is a **learning project**, not production-validated hardware firmware. Reviewing the source reveals several areas to improve:
 
@@ -500,8 +472,7 @@ This repository is a **learning project**, not production-validated hardware fir
 3. **Safe port updates:** avoid overwriting a whole register (`PORTD = ...`) if other functions share the same port.
 4. **ADC reliability:** allow channel/reference settling time, calibrate temperature readings, and document electrical assumptions.
 5. **I²C robustness:** add timeouts, error/status handling, AHT20 *busy* checks, and CRC validation.
-6. **EEPROM:** finish the hex-dump exercise, correct addresses, keep every read within `0x000–0x3FF`, and implement serial output.
-7. **Portability:** centralize hardware constants and make serial port, programmer, and clock settings configurable without editing every Makefile.
+6. **Portability:** centralize hardware constants and make serial port, programmer, and clock settings configurable without editing every Makefile.
 
 These notes describe the supplied project sources and **do not** represent results from testing on a physical board.
 

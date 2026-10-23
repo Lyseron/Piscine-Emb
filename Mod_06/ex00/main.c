@@ -17,6 +17,8 @@ void i2c_init(void);
 void i2c_start(void);
 void i2c_stop(void);
 
+void timer_2s(void);
+
 // ------------------------------------------- MAIN FUNCTION -------------------------------------------------- //
 
 // Ex00 -> Init, Start and stop a communication and write the status of each
@@ -57,7 +59,7 @@ int main(void)
 		i2c_stop();
 
 		uart_printstr("\r\n");
-		_delay_ms(2000);
+		timer_2s();
 	}
 }
 
@@ -116,6 +118,24 @@ void i2c_stop(void)
 	// print the success
 	uart_printstr("STOP transmisson completed\r\n");
 
+}
+
+void timer_2s(void)
+{
+	// Reset the timer
+	TCNT1 = 0;
+
+	// Activate the CTC mode -> Timer1 goes back to 0 when OCR1A is reached
+	TCCR1B = (1 << WGM12);
+
+	// Set the prescaler to 1024 -> to slow down Timer1 clock
+	TCCR1B |= (1 << CS12) | (1 << CS10);
+
+	while (TCNT1 < 31250)
+	{}
+
+	// Stop the Timer
+	TCCR1B = 0;
 }
 
 

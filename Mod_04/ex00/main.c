@@ -35,12 +35,22 @@ int main(void)
 // Called when a falling edge is detected on PD2 (button pressed)
 void INT0_vect(void)
 {
-	// Toggle the Led
-	PORTB ^= (1 << LED);
+	// Disable the external interrupt for the button
+	EIMSK |= (1 << INT0);
+
+	if (!(EICRA & (1 << ISC00)))
+		// Toggle the Led if mode push
+		PORTB ^= (1 << LED);
 	_delay_ms(30);
+
+	// Toggle the mode from falling to rising
+	EICRA ^= (1 << ISC00);
 
 	// Clear pending interupt
 	EIFR = (1 << INTF0);
+
+	// Re enable the external interupt for the button
+	EIMSK |= (1 << INT0);
 }
 
 void init(void)
